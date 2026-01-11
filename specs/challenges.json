@@ -1,0 +1,155 @@
+{
+  "version": "1.0.0",
+  "challenges": [
+    {
+      "id": "V01",
+      "name": "Broken Object Level Authorization",
+      "category": "authorization",
+      "difficulty": "easy",
+      "points": 100,
+      "description": "Access another user's data by manipulating the user ID",
+      "hints": [
+        "Try changing the ID in the URL",
+        "What happens if you request /api/users/1 instead of your own ID?"
+      ],
+      "flag_format": "VULNAPI{bola_*}",
+      "endpoints": ["/api/users/{id}"],
+      "references": ["OWASP API1:2023", "CWE-639"]
+    },
+    {
+      "id": "V02",
+      "name": "Broken Authentication",
+      "category": "authentication",
+      "difficulty": "medium",
+      "points": 200,
+      "description": "Exploit weak JWT implementation",
+      "hints": [
+        "Examine the JWT token structure",
+        "What algorithm is being used?"
+      ],
+      "flag_format": "VULNAPI{jwt_*}",
+      "endpoints": ["/api/login", "/api/token/refresh"],
+      "references": ["OWASP API2:2023", "CWE-287"]
+    },
+    {
+      "id": "V03",
+      "name": "Excessive Data Exposure",
+      "category": "data",
+      "difficulty": "easy",
+      "points": 100,
+      "description": "Find sensitive data in API responses",
+      "hints": [
+        "Look carefully at all fields returned by the API",
+        "Is there information you shouldn't see?"
+      ],
+      "flag_format": "VULNAPI{exposure_*}",
+      "endpoints": ["/api/users/me"],
+      "references": ["OWASP API3:2023", "CWE-213"]
+    },
+    {
+      "id": "V04",
+      "name": "Lack of Rate Limiting",
+      "category": "availability",
+      "difficulty": "easy",
+      "points": 100,
+      "description": "Exploit missing rate limiting",
+      "hints": [
+        "Try multiple login attempts",
+        "Is there any protection against brute force?"
+      ],
+      "flag_format": "VULNAPI{ratelimit_*}",
+      "endpoints": ["/api/login"],
+      "references": ["OWASP API4:2023", "CWE-770"]
+    },
+    {
+      "id": "V05",
+      "name": "Mass Assignment",
+      "category": "authorization",
+      "difficulty": "medium",
+      "points": 200,
+      "description": "Modify unauthorized fields through mass assignment",
+      "hints": [
+        "What fields can you send in the update request?",
+        "Try adding fields that weren't in the original form"
+      ],
+      "flag_format": "VULNAPI{mass_*}",
+      "endpoints": ["/api/users/me"],
+      "references": ["OWASP API6:2023", "CWE-915"]
+    },
+    {
+      "id": "V06",
+      "name": "SQL Injection",
+      "category": "injection",
+      "difficulty": "medium",
+      "points": 250,
+      "description": "Extract data using SQL injection",
+      "hints": [
+        "Test the search parameter",
+        "Try common SQL injection payloads"
+      ],
+      "flag_format": "VULNAPI{sqli_*}",
+      "endpoints": ["/api/products?search="],
+      "references": ["OWASP API8:2023", "CWE-89"]
+    },
+    {
+      "id": "V07",
+      "name": "Command Injection",
+      "category": "injection",
+      "difficulty": "hard",
+      "points": 300,
+      "description": "Execute system commands through the API",
+      "hints": [
+        "Look for endpoints that interact with the system",
+        "Can you inject shell commands?"
+      ],
+      "flag_format": "VULNAPI{cmd_*}",
+      "endpoints": ["/api/tools/ping"],
+      "references": ["OWASP API8:2023", "CWE-78"]
+    },
+    {
+      "id": "V08",
+      "name": "Security Misconfiguration",
+      "category": "configuration",
+      "difficulty": "easy",
+      "points": 100,
+      "description": "Identify security misconfigurations",
+      "hints": [
+        "Check the HTTP response headers",
+        "Is CORS properly configured?"
+      ],
+      "flag_format": "VULNAPI{misconfig_*}",
+      "endpoints": ["*"],
+      "references": ["OWASP API7:2023", "CWE-16"]
+    },
+    {
+      "id": "V09",
+      "name": "Improper Assets Management",
+      "category": "inventory",
+      "difficulty": "medium",
+      "points": 150,
+      "description": "Find and exploit old API versions",
+      "hints": [
+        "Are there other API versions available?",
+        "Try /api/v1/ instead of /api/v2/"
+      ],
+      "flag_format": "VULNAPI{version_*}",
+      "endpoints": ["/api/v1/*"],
+      "references": ["OWASP API9:2023", "CWE-1059"]
+    },
+    {
+      "id": "V10",
+      "name": "Insufficient Logging",
+      "category": "monitoring",
+      "difficulty": "hard",
+      "points": 200,
+      "description": "Perform actions without being logged",
+      "hints": [
+        "Some actions may not be logged",
+        "Check if your attacks leave traces"
+      ],
+      "flag_format": "VULNAPI{logging_*}",
+      "endpoints": ["*"],
+      "references": ["OWASP API10:2023", "CWE-778"]
+    }
+  ]
+}

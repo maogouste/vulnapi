@@ -1,0 +1,1 @@
+"""Isolated vulnerable code implementations."""
