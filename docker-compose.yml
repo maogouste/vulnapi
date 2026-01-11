@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  # Python/FastAPI - port 8000
+  fastapi:
+    build:
+      context: ./implementations/python-fastapi
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - VULNAPI_MODE=${VULNAPI_MODE:-challenge}
+    restart: unless-stopped
+
+  # Node.js/Express - port 3001
+  express:
+    build:
+      context: ./implementations/node-express
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      - VULNAPI_MODE=${VULNAPI_MODE:-challenge}
+    restart: unless-stopped
+
+  # Go/Gin - port 3002
+  go:
+    build:
+      context: ./implementations/go-gin
+      dockerfile: Dockerfile
+    ports:
+      - "3002:3002"
+    environment:
+      - VULNAPI_MODE=${VULNAPI_MODE:-challenge}
+    restart: unless-stopped
+
+  # PHP - port 3003
+  php:
+    build:
+      context: ./implementations/php-laravel
+      dockerfile: Dockerfile
+    ports:
+      - "3003:3003"
+    environment:
+      - VULNAPI_MODE=${VULNAPI_MODE:-challenge}
+    restart: unless-stopped
+
+  # Java/Spring Boot - port 3004
+  java:
+    build:
+      context: ./implementations/java-spring
+      dockerfile: Dockerfile
+    ports:
+      - "3004:3004"
+    environment:
+      - VULNAPI_MODE=${VULNAPI_MODE:-challenge}
+    restart: unless-stopped
+
+  # Frontend - port 3000
+  frontend:
+    build:
+      context: ./implementations/python-fastapi/frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      - fastapi
+      - express
+      - go
+      - php
+      - java
+    restart: unless-stopped
