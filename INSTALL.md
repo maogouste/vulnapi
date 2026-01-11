@@ -1,12 +1,12 @@
-# Installation de VulnAPI
+# Installing VulnAPI
 
-## Prérequis
+## Prerequisites
 
 ### Python
-- Python 3.10 ou supérieur
+- Python 3.10 or higher
 - pip
 
-### Dépendances système (pour les vulnérabilités d'injection)
+### System Dependencies (for injection vulnerabilities)
 ```bash
 # Ubuntu/Debian
 sudo apt update
@@ -21,109 +21,109 @@ sudo dnf install -y iputils bind-utils
 
 ## Installation
 
-### 1. Cloner le projet
+### 1. Clone the project
 ```bash
 git clone <repo-url>
 cd vulnapi
 ```
 
-### 2. Créer l'environnement virtuel
+### 2. Create virtual environment
 ```bash
 cd implementations/python-fastapi
 
-# Créer le venv
+# Create venv
 python3 -m venv venv
 
-# Activer le venv
+# Activate venv
 source venv/bin/activate  # Linux/Mac
-# ou
+# or
 venv\Scripts\activate     # Windows
 ```
 
-### 3. Installer les dépendances
+### 3. Install dependencies
 ```bash
 pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-### 4. Configuration (optionnel)
+### 4. Configuration (optional)
 ```bash
-# Copier le fichier d'exemple
+# Copy example file
 cp .env.example .env
 
-# Éditer si nécessaire
+# Edit if needed
 nano .env
 ```
 
-### 5. Lancer l'application
+### 5. Start the application
 ```bash
-# Mode développement avec rechargement auto
+# Development mode with auto-reload
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
-# Mode production
+# Production mode
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
 ```
 
-### 6. Accéder à l'API
-- Documentation Swagger : http://localhost:8000/docs
-- Documentation ReDoc : http://localhost:8000/redoc
-- API Root : http://localhost:8000/
+### 6. Access the API
+- Swagger Documentation: http://localhost:8000/docs
+- ReDoc Documentation: http://localhost:8000/redoc
+- API Root: http://localhost:8000/
 
-## Installation avec Docker
+## Docker Installation
 
 ```bash
-# Depuis la racine du projet
+# From project root
 docker-compose up -d
 
 # Logs
 docker-compose logs -f vulnapi-python
 ```
 
-## Vérification de l'installation
+## Verify Installation
 
 ```bash
-# Tester que l'API répond
+# Test that the API responds
 curl http://localhost:8000/health
 
-# Réponse attendue :
+# Expected response:
 # {"status":"healthy","debug":true}
 ```
 
-## Résolution de problèmes
+## Troubleshooting
 
-### Erreur "Module not found"
+### "Module not found" error
 ```bash
-# S'assurer que le venv est activé
+# Make sure venv is activated
 source venv/bin/activate
 
-# Réinstaller les dépendances
+# Reinstall dependencies
 pip install -r requirements.txt
 ```
 
-### Erreur avec ping/nslookup (V07)
-Les vulnérabilités d'injection de commandes nécessitent ces outils :
+### Error with ping/nslookup (V07)
+Command injection vulnerabilities require these tools:
 ```bash
-which ping    # Doit retourner un chemin
+which ping    # Should return a path
 which nslookup
 ```
 
-### Port déjà utilisé
+### Port already in use
 ```bash
-# Changer le port
+# Change the port
 uvicorn app.main:app --port 8001
 ```
 
-### Base de données corrompue
+### Corrupted database
 ```bash
-# Supprimer et relancer (sera recréée automatiquement)
+# Delete and restart (will be recreated automatically)
 rm vulnapi.db
 uvicorn app.main:app --reload
 ```
 
-## Notes de sécurité
+## Security Notes
 
-**AVERTISSEMENT** : Cette application contient des vulnérabilités intentionnelles.
+**WARNING**: This application contains intentional vulnerabilities.
 
-- Ne JAMAIS exposer sur Internet sans protection
-- Utiliser uniquement dans un environnement isolé
-- Idéal : VM dédiée ou conteneur Docker
+- NEVER expose on the Internet without protection
+- Use only in an isolated environment
+- Ideal: Dedicated VM or Docker container

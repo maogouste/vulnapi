@@ -1,61 +1,61 @@
 # VulnAPI
 
-API volontairement vulnérable pour l'apprentissage de la sécurité des APIs.
+Intentionally vulnerable API for learning API security.
 
-## Avertissement
+## Warning
 
-Ce logiciel contient des vulnérabilités **intentionnelles** à des fins éducatives.
-**Ne jamais déployer en production.**
+This software contains **intentional** vulnerabilities for educational purposes.
+**Never deploy in production.**
 
-## Objectifs
+## Goals
 
-- Comprendre les vulnérabilités OWASP API Security Top 10
-- Pratiquer l'exploitation dans un environnement contrôlé
-- Comparer les vecteurs d'attaque REST vs GraphQL
-- Apprendre à sécuriser ses APIs
+- Understand OWASP API Security Top 10 vulnerabilities
+- Practice exploitation in a controlled environment
+- Compare REST vs GraphQL attack vectors
+- Learn how to secure your APIs
 
-## Structure du projet
+## Project Structure
 
 ```
 vulnapi/
-├── specs/                    # Contrat API commun (OpenAPI, tests)
+├── specs/                    # Shared API contract (OpenAPI, tests)
 ├── implementations/
-│   └── python-fastapi/       # Implémentation de référence
-└── PROJECT_SPEC.md           # Spécification complète du projet
+│   └── python-fastapi/       # Reference implementation
+└── PROJECT_SPEC.md           # Full project specification
 ```
 
-## Démarrage rapide
+## Quick Start
 
 ```bash
 cd implementations/python-fastapi
 
-# Créer l'environnement virtuel
+# Create virtual environment
 python -m venv venv
 source venv/bin/activate  # Linux/Mac
 # venv\Scripts\activate   # Windows
 
-# Installer les dépendances
+# Install dependencies
 pip install -r requirements.txt
 
-# Lancer l'API
+# Start the API
 uvicorn app.main:app --reload
 ```
 
-L'API sera disponible sur `http://localhost:8000`
+The API will be available at `http://localhost:8000`
 
-## Phases du projet
+## Project Phases
 
-| Phase | Description | Statut |
+| Phase | Description | Status |
 |-------|-------------|--------|
-| 1 | API REST + Challenges | En cours |
-| 2 | GraphQL | Planifié |
-| 3 | Mode Documentation | Planifié |
-| 4 | Frontend | Planifié |
+| 1 | REST API + Challenges | Completed |
+| 2 | GraphQL | Planned |
+| 3 | Documentation Mode | Planned |
+| 4 | Frontend | Planned |
 
 ## Documentation
 
-Voir [PROJECT_SPEC.md](PROJECT_SPEC.md) pour la spécification complète.
+See [PROJECT_SPEC.md](PROJECT_SPEC.md) for the full specification.
 
-## Licence
+## License
 
-[À définir]
+[TBD]

@@ -1,32 +1,32 @@
-# VulnAPI - API Volontairement Vulnérable
+# VulnAPI - Intentionally Vulnerable API
 
-## Vision du Projet
+## Project Vision
 
-VulnAPI est une plateforme pédagogique démontrant les mauvaises pratiques de sécurité dans les APIs. Elle permet aux apprenants de comprendre, exploiter et corriger les vulnérabilités courantes listées dans l'OWASP API Security Top 10.
+VulnAPI is an educational platform demonstrating security bad practices in APIs. It allows learners to understand, exploit, and fix common vulnerabilities listed in the OWASP API Security Top 10.
 
-## Objectifs Pédagogiques
+## Educational Goals
 
-- Illustrer les vulnérabilités API dans un environnement contrôlé
-- Comparer les vecteurs d'attaque entre REST et GraphQL
-- Permettre l'apprentissage par la pratique (mode challenge)
-- Fournir des explications détaillées (mode documentation)
+- Illustrate API vulnerabilities in a controlled environment
+- Compare attack vectors between REST and GraphQL
+- Enable learning by doing (challenge mode)
+- Provide detailed explanations (documentation mode)
 
 ---
 
-## Architecture en 4 Phases
+## 4-Phase Architecture
 
-### Phase 1 : API REST + Challenges
+### Phase 1: REST API + Challenges
 
-**Objectif** : Socle fonctionnel avec endpoints REST vulnérables
+**Goal**: Functional foundation with vulnerable REST endpoints
 
-**Livrables** :
-- API REST avec authentification JWT (volontairement mal implémentée)
-- Base de données avec données fictives
-- Système de flags/challenges
-- Documentation OpenAPI
+**Deliverables**:
+- REST API with JWT authentication (intentionally poorly implemented)
+- Database with fictional data
+- Flag/challenge system
+- OpenAPI documentation
 
-**Vulnérabilités à implémenter** :
-| ID | Vulnérabilité | Endpoint exemple |
+**Vulnerabilities to implement**:
+| ID | Vulnerability | Example Endpoint |
 |----|---------------|------------------|
 | V01 | Broken Object Level Authorization (BOLA) | `GET /api/users/{id}` |
 | V02 | Broken Authentication | `POST /api/login` |
@@ -37,37 +37,37 @@ VulnAPI est une plateforme pédagogique démontrant les mauvaises pratiques de s
 | V07 | Command Injection | `POST /api/tools/ping` |
 | V08 | Security Misconfiguration | Headers, CORS |
 | V09 | Improper Assets Management | `GET /api/v1/` vs `/api/v2/` |
-| V10 | Insufficient Logging | Absence de traces |
+| V10 | Insufficient Logging | Missing audit trails |
 
-### Phase 2 : GraphQL + Challenges Étendus
+### Phase 2: GraphQL + Extended Challenges
 
-**Objectif** : Ajouter une couche GraphQL avec vulnérabilités spécifiques
+**Goal**: Add a GraphQL layer with specific vulnerabilities
 
-**Livrables** :
-- Endpoint `/graphql` avec schema complet
-- Vulnérabilités spécifiques GraphQL
-- Challenges supplémentaires
+**Deliverables**:
+- `/graphql` endpoint with complete schema
+- GraphQL-specific vulnerabilities
+- Additional challenges
 
-**Vulnérabilités GraphQL spécifiques** :
-| ID | Vulnérabilité | Description |
+**GraphQL-specific vulnerabilities**:
+| ID | Vulnerability | Description |
 |----|---------------|-------------|
-| G01 | Introspection exposée | Schema accessible en production |
-| G02 | Nested queries (DoS) | Requêtes imbriquées sans limite |
-| G03 | Batching attacks | Multiples opérations en une requête |
-| G04 | Field suggestions | Aide à l'énumération |
-| G05 | Authorization bypass | Vérifications manquantes sur resolvers |
+| G01 | Exposed introspection | Schema accessible in production |
+| G02 | Nested queries (DoS) | Unlimited nested queries |
+| G03 | Batching attacks | Multiple operations in one request |
+| G04 | Field suggestions | Aids enumeration |
+| G05 | Authorization bypass | Missing checks on resolvers |
 
-### Phase 3 : Mode Documentation
+### Phase 3: Documentation Mode
 
-**Objectif** : Ajouter des explications pédagogiques
+**Goal**: Add educational explanations
 
-**Livrables** :
-- Toggle challenge/documentation dans l'API
-- Explications détaillées pour chaque vulnérabilité
-- Exemples de code vulnérable vs sécurisé
-- Références OWASP et CWE
+**Deliverables**:
+- Challenge/documentation toggle in the API
+- Detailed explanations for each vulnerability
+- Vulnerable vs secure code examples
+- OWASP and CWE references
 
-**Structure documentation par vulnérabilité** :
+**Documentation structure per vulnerability**:
 ```
 {
   "id": "V01",
@@ -81,63 +81,63 @@ VulnAPI est une plateforme pédagogique démontrant les mauvaises pratiques de s
 }
 ```
 
-### Phase 4 : Frontend d'Introduction
+### Phase 4: Introduction Frontend
 
-**Objectif** : Interface web pour guider les débutants
+**Goal**: Web interface to guide beginners
 
-**Livrables** :
-- Dashboard avec progression
-- Interface pour tester les endpoints
-- Visualisation des requêtes/réponses
-- Tutoriels interactifs
+**Deliverables**:
+- Dashboard with progress tracking
+- Interface to test endpoints
+- Request/response visualization
+- Interactive tutorials
 
 ---
 
-## Stack Technique
+## Tech Stack
 
-### Implémentation Principale : Python
+### Main Implementation: Python
 
 ```
 python-fastapi/
 ├── app/
 │   ├── __init__.py
-│   ├── main.py              # Point d'entrée FastAPI
+│   ├── main.py              # FastAPI entry point
 │   ├── config.py            # Configuration
-│   ├── database.py          # Connexion DB
+│   ├── database.py          # DB connection
 │   │
-│   ├── models/              # Modèles SQLAlchemy
+│   ├── models/              # SQLAlchemy models
 │   │   ├── user.py
 │   │   ├── product.py
 │   │   └── order.py
 │   │
-│   ├── schemas/             # Schemas Pydantic
+│   ├── schemas/             # Pydantic schemas
 │   │   └── ...
 │   │
-│   ├── routers/             # Endpoints REST
+│   ├── routers/             # REST endpoints
 │   │   ├── auth.py
 │   │   ├── users.py
 │   │   ├── products.py
 │   │   └── tools.py
 │   │
-│   ├── graphql/             # Schema GraphQL (Phase 2)
+│   ├── graphql/             # GraphQL schema (Phase 2)
 │   │   ├── schema.py
 │   │   ├── queries.py
 │   │   └── mutations.py
 │   │
-│   ├── challenges/          # Système de flags
+│   ├── challenges/          # Flag system
 │   │   ├── flags.py
 │   │   └── validator.py
 │   │
-│   ├── docs/                # Mode documentation (Phase 3)
+│   ├── docs/                # Documentation mode (Phase 3)
 │   │   └── vulnerabilities.json
 │   │
-│   └── vulnerabilities/     # Code vulnérable isolé
+│   └── vulnerabilities/     # Isolated vulnerable code
 │       ├── bola.py
 │       ├── sqli.py
 │       └── ...
 │
 ├── tests/
-│   ├── exploits/            # Scripts d'exploitation
+│   ├── exploits/            # Exploitation scripts
 │   └── unit/
 │
 ├── docker-compose.yaml
@@ -146,7 +146,7 @@ python-fastapi/
 └── README.md
 ```
 
-### Dépendances Python (Phase 1)
+### Python Dependencies (Phase 1)
 
 ```
 fastapi>=0.109.0
@@ -154,11 +154,11 @@ uvicorn>=0.27.0
 sqlalchemy>=2.0.0
 pydantic>=2.0.0
 python-jose>=3.3.0          # JWT
-passlib>=1.7.0              # Hashing (volontairement mal utilisé)
+passlib>=1.7.0              # Hashing (intentionally misused)
 python-multipart>=0.0.6
 ```
 
-### Dépendances supplémentaires (Phase 2)
+### Additional Dependencies (Phase 2)
 
 ```
 strawberry-graphql>=0.217.0  # GraphQL
@@ -166,77 +166,77 @@ strawberry-graphql>=0.217.0  # GraphQL
 
 ---
 
-## Contrat API Commun
+## Shared API Contract
 
-Pour faciliter les réimplémentations dans d'autres langages, un contrat OpenAPI sera maintenu :
+To facilitate reimplementations in other languages, an OpenAPI contract will be maintained:
 
 ```
 specs/
-├── openapi.yaml             # Spécification REST
-├── graphql.schema           # Schema GraphQL
-├── challenges.json          # Définition des challenges/flags
-├── test-suite/              # Tests d'exploitation portables
+├── openapi.yaml             # REST specification
+├── graphql.schema           # GraphQL schema
+├── challenges.json          # Challenge/flag definitions
+├── test-suite/              # Portable exploitation tests
 │   ├── test_bola.py
 │   ├── test_sqli.py
 │   └── ...
 └── data/
-    └── seed.sql             # Données initiales communes
+    └── seed.sql             # Shared initial data
 ```
 
 ---
 
-## Réimplémentations Futures
+## Future Reimplementations
 
-Le projet est conçu pour être réimplémenté dans d'autres langages :
+The project is designed to be reimplemented in other languages:
 
-| Priorité | Langage | Framework | Justification |
+| Priority | Language | Framework | Justification |
 |----------|---------|-----------|---------------|
-| 1 | Python | FastAPI | Implémentation de référence |
-| 2 | JavaScript | Express.js | Très répandu, écosystème large |
-| 3 | Java | Spring Boot | Contexte entreprise |
-| 4 | Go | Gin | Cloud-native, moderne |
-| 5 | PHP | Laravel | Legacy, encore très présent |
+| 1 | Python | FastAPI | Reference implementation |
+| 2 | JavaScript | Express.js | Very popular, large ecosystem |
+| 3 | Java | Spring Boot | Enterprise context |
+| 4 | Go | Gin | Cloud-native, modern |
+| 5 | PHP | Laravel | Legacy, still very present |
 
-### Règles pour les réimplémentations
+### Rules for reimplementations
 
-1. **Respecter le contrat OpenAPI** — Mêmes endpoints, mêmes réponses
-2. **Mêmes vulnérabilités** — Comportement identique exploitable
-3. **Mêmes flags** — Permettre les mêmes challenges
-4. **Tests partagés** — Passer la même suite de tests d'exploitation
-5. **Structure similaire** — Faciliter la comparaison entre implémentations
+1. **Follow the OpenAPI contract** — Same endpoints, same responses
+2. **Same vulnerabilities** — Identical exploitable behavior
+3. **Same flags** — Enable the same challenges
+4. **Shared tests** — Pass the same exploitation test suite
+5. **Similar structure** — Facilitate comparison between implementations
 
 ---
 
-## Environnement de Développement
+## Development Environment
 
-### Prérequis
+### Prerequisites
 
 - Python 3.11+
 - Docker & Docker Compose
 - SQLite (dev) / PostgreSQL (prod)
 
-### Lancement rapide
+### Quick Start
 
 ```bash
-# Cloner le projet
+# Clone the project
 git clone <repo>
 cd vulnapi
 
-# Environnement virtuel
+# Virtual environment
 python -m venv venv
 source venv/bin/activate
 
-# Dépendances
+# Dependencies
 pip install -r requirements.txt
 
-# Lancer l'API
+# Start the API
 uvicorn app.main:app --reload
 
-# Ou via Docker
+# Or via Docker
 docker-compose up
 ```
 
-### Variables d'environnement
+### Environment Variables
 
 ```
 VULNAPI_MODE=challenge|documentation
@@ -247,38 +247,38 @@ VULNAPI_DEBUG=true
 
 ---
 
-## Contexte pour Claude
+## Context for Claude
 
-### Lors des prochaines sessions, rappeler :
+### For future sessions, remember:
 
-1. **Projet** : VulnAPI - API volontairement vulnérable pour l'apprentissage
-2. **Phase actuelle** : Phase 1 terminée (REST + Challenges)
-3. **Stack** : Python/FastAPI, puis multi-langages
-4. **Approche** : Incrémentale, chaque phase livre de la valeur
-5. **Fichier de référence** : Ce document `PROJECT_SPEC.md`
+1. **Project**: VulnAPI - Intentionally vulnerable API for learning
+2. **Current phase**: Phase 1 completed (REST + Challenges)
+3. **Stack**: Python/FastAPI, then multi-language
+4. **Approach**: Incremental, each phase delivers value
+5. **Reference file**: This document `PROJECT_SPEC.md`
 
-### Commandes utiles pour Claude
+### Useful commands for Claude
 
-- "Continue le développement de VulnAPI phase X"
-- "Ajoute la vulnérabilité Y à l'API REST"
-- "Prépare la réimplémentation en [langage]"
-- "Génère les tests d'exploitation pour la vulnérabilité Z"
-
----
-
-## Licence et Avertissement
-
-**AVERTISSEMENT** : Ce logiciel est conçu à des fins éducatives uniquement. Les vulnérabilités sont intentionnelles. Ne jamais déployer en production ni utiliser contre des systèmes sans autorisation.
-
-**Licence** : [À définir - MIT / GPL / etc.]
+- "Continue VulnAPI development phase X"
+- "Add vulnerability Y to the REST API"
+- "Prepare the reimplementation in [language]"
+- "Generate exploitation tests for vulnerability Z"
 
 ---
 
-## Historique des décisions
+## License and Disclaimer
 
-| Date | Décision |
+**WARNING**: This software is designed for educational purposes only. Vulnerabilities are intentional. Never deploy in production or use against systems without authorization.
+
+**License**: [TBD - MIT / GPL / etc.]
+
+---
+
+## Decision History
+
+| Date | Decision |
 |------|----------|
-| 2026-01-11 | Création du projet, choix de l'approche en 4 phases |
-| 2026-01-11 | Python/FastAPI comme implémentation de référence |
-| 2026-01-11 | Architecture multi-langages prévue dès le départ |
-| 2026-01-11 | Phase 1 terminée : API REST + 10 vulnérabilités OWASP + système de flags |
+| 2026-01-11 | Project creation, 4-phase approach chosen |
+| 2026-01-11 | Python/FastAPI as reference implementation |
+| 2026-01-11 | Multi-language architecture planned from the start |
+| 2026-01-11 | Phase 1 completed: REST API + 10 OWASP vulnerabilities + flag system |
