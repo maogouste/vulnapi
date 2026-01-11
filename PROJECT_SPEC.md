@@ -65,27 +65,47 @@ VulnAPI is an educational platform demonstrating security bad practices in APIs.
 - No query depth/complexity limits
 - Batching enabled without restrictions
 
-### Phase 3: Documentation Mode
+### Phase 3: Documentation Mode (COMPLETED)
 
 **Goal**: Add educational explanations
 
 **Deliverables**:
-- Challenge/documentation toggle in the API
-- Detailed explanations for each vulnerability
+- Challenge/documentation toggle via `VULNAPI_MODE` environment variable
+- Detailed explanations for all 15 vulnerabilities
 - Vulnerable vs secure code examples
 - OWASP and CWE references
+- Exploitation steps and remediation advice
+
+**Documentation endpoints**:
+| Endpoint | Description |
+|----------|-------------|
+| `GET /api/docs/mode` | Current mode status |
+| `GET /api/docs/stats` | Vulnerability statistics |
+| `GET /api/docs/categories` | Categories with counts |
+| `GET /api/docs/vulnerabilities` | List all (limited in challenge mode) |
+| `GET /api/docs/vulnerabilities/{id}` | Full details (documentation mode only) |
 
 **Documentation structure per vulnerability**:
-```
+```json
 {
   "id": "V01",
   "name": "Broken Object Level Authorization",
+  "category": "authorization",
+  "severity": "high",
+  "owasp": "API1:2023",
+  "cwe": "CWE-639",
   "description": "...",
+  "vulnerable_endpoint": "GET /api/users/{id}",
+  "exploitation": {
+    "steps": ["Step 1", "Step 2", "..."],
+    "example_request": "...",
+    "example_response": "..."
+  },
   "vulnerable_code": "...",
   "secure_code": "...",
-  "exploitation": "...",
-  "remediation": "...",
-  "references": ["OWASP API1:2023", "CWE-639"]
+  "remediation": ["Fix 1", "Fix 2", "..."],
+  "references": ["https://owasp.org/...", "https://cwe.mitre.org/..."],
+  "flag": "VULNAPI{...}"
 }
 ```
 
@@ -260,9 +280,9 @@ VULNAPI_DEBUG=true
 ### For future sessions, remember:
 
 1. **Project**: VulnAPI - Intentionally vulnerable API for learning
-2. **Current phase**: Phase 2 completed (REST + GraphQL + 15 Challenges)
+2. **Current phase**: Phase 3 completed (REST + GraphQL + Documentation Mode)
 3. **Stack**: Python/FastAPI + Strawberry GraphQL, then multi-language
-4. **Approach**: Incremental, each phase delivers value
+4. **Features**: 15 challenges (V01-V10 REST, G01-G05 GraphQL), 2 modes
 5. **Reference file**: This document `PROJECT_SPEC.md`
 
 ### Useful commands for Claude
@@ -291,3 +311,4 @@ VULNAPI_DEBUG=true
 | 2026-01-11 | Multi-language architecture planned from the start |
 | 2026-01-11 | Phase 1 completed: REST API + 10 OWASP vulnerabilities + flag system |
 | 2026-01-11 | Phase 2 completed: GraphQL API + 5 GraphQL-specific vulnerabilities (G01-G05) |
+| 2026-01-11 | Phase 3 completed: Documentation mode with detailed vulnerability explanations |

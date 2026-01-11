@@ -55,6 +55,13 @@ cp .env.example .env
 nano .env
 ```
 
+**Environment Variables:**
+| Variable | Values | Description |
+|----------|--------|-------------|
+| `VULNAPI_MODE` | `challenge` (default), `documentation` | API mode |
+| `VULNAPI_DEBUG` | `true`, `false` | Debug mode |
+| `VULNAPI_DB_URL` | SQLite URL | Database connection |
+
 ### 5. Start the application
 ```bash
 # Development mode with auto-reload
@@ -107,6 +114,25 @@ curl -X POST http://localhost:8000/graphql/ \
 curl -X POST http://localhost:8000/graphql/ \
   -H "Content-Type: application/json" \
   -d '[{"query":"{ user(id:1) { username } }"},{"query":"{ user(id:2) { username } }"}]'
+```
+
+## Documentation Mode
+
+```bash
+# Start in documentation mode
+VULNAPI_MODE=documentation uvicorn app.main:app --reload
+
+# Check current mode
+curl http://localhost:8000/api/docs/mode
+
+# Get vulnerability statistics
+curl http://localhost:8000/api/docs/stats
+
+# List all vulnerabilities
+curl http://localhost:8000/api/docs/vulnerabilities
+
+# Get detailed info for a specific vulnerability (documentation mode only)
+curl http://localhost:8000/api/docs/vulnerabilities/V01
 ```
 
 ## Troubleshooting

@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.database import init_db
 from app.seed import seed_database
-from app.routers import auth, users, products, tools, admin, flags
+from app.routers import auth, users, products, tools, admin, flags, docs
 from app.graphql import create_graphql_router
 
 
@@ -60,6 +60,7 @@ app.include_router(products.router, prefix="/api", tags=["Products"])
 app.include_router(tools.router, prefix="/api", tags=["Tools"])
 app.include_router(admin.router, prefix="/api", tags=["Admin"])
 app.include_router(flags.router, prefix="/api", tags=["Flags"])
+app.include_router(docs.router, prefix="/api/docs", tags=["Documentation"])
 
 # VULNERABILITY: Old API version still accessible (V09)
 app.include_router(users.router_v1, prefix="/api/v1", tags=["Users (Legacy)"])
@@ -80,16 +81,23 @@ async def root():
     """Root endpoint with API information."""
     return {
         "name": "VulnAPI",
-        "version": "0.1.0",
+        "version": "0.2.0",
         "mode": settings.mode,
         "message": "Welcome to VulnAPI - A deliberately vulnerable API",
-        "documentation": "/docs",
+        "swagger_docs": "/docs",
         "endpoints": {
             "auth": "/api/login, /api/register",
             "users": "/api/users",
             "products": "/api/products",
             "tools": "/api/tools",
-            "graphql": "/graphql",
+            "graphql": "/graphql/",
+            "vulnerabilities": "/api/docs/vulnerabilities",
+        },
+        "mode_info": {
+            "current": settings.mode,
+            "challenge": "Limited info - find vulnerabilities yourself",
+            "documentation": "Full details - exploitation steps and remediation",
+            "switch": "Set VULNAPI_MODE=documentation to enable full docs",
         }
     }
 

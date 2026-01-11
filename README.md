@@ -57,8 +57,24 @@ The API will be available at `http://localhost:8000`
 |-------|-------------|--------|
 | 1 | REST API + Challenges (V01-V10) | Completed |
 | 2 | GraphQL + Challenges (G01-G05) | Completed |
-| 3 | Documentation Mode | Planned |
+| 3 | Documentation Mode | Completed |
 | 4 | Frontend | Planned |
+
+## API Modes
+
+VulnAPI supports two modes:
+
+- **Challenge Mode** (default): Limited information, find vulnerabilities yourself
+- **Documentation Mode**: Full exploitation details, code examples, and remediation
+
+Switch modes with the environment variable:
+```bash
+# Challenge mode (default)
+VULNAPI_MODE=challenge uvicorn app.main:app
+
+# Documentation mode
+VULNAPI_MODE=documentation uvicorn app.main:app
+```
 
 ## Challenges
 
