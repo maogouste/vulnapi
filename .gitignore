@@ -20,7 +20,7 @@ wheels/
 .installed.cfg
 *.egg
 
-# Virtual environments
+# Virtual environments - DO NOT TRANSFER
 venv/
 ENV/
 env/
@@ -38,7 +38,7 @@ env/
 .env.local
 .env.*.local
 
-# Database
+# Database - regenerated on startup
 *.db
 *.sqlite
 *.sqlite3
