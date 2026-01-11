@@ -26,7 +26,7 @@ async def search_products_vulnerable(
     result = await db.execute(text(query))
     rows = result.fetchall()
 
-    # Convert to dict
+    # Convert to dict - column order matches model definition
     products = []
     for row in rows:
         products.append({
@@ -36,6 +36,10 @@ async def search_products_vulnerable(
             "price": row[3],
             "stock": row[4],
             "category": row[5],
+            "is_active": row[6],
+            "internal_notes": row[7],
+            "supplier_cost": row[8],
+            "created_at": row[9],
         })
 
     return products
