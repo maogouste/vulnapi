@@ -43,6 +43,16 @@ uvicorn app.main:app --reload
 
 The API will be available at `http://localhost:8000`
 
+### Frontend (Optional)
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+The frontend will be available at `http://localhost:3000`
+
 ## Endpoints
 
 | Endpoint | Description |
@@ -58,7 +68,7 @@ The API will be available at `http://localhost:8000`
 | 1 | REST API + Challenges (V01-V10) | Completed |
 | 2 | GraphQL + Challenges (G01-G05) | Completed |
 | 3 | Documentation Mode | Completed |
-| 4 | Frontend | Planned |
+| 4 | Frontend (React/Vite) | Completed |
 
 ## API Modes
 
