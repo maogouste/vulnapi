@@ -1,0 +1,168 @@
+/**
+ * VulnAPI - Express.js Implementation
+ *
+ * Deliberately vulnerable API for security learning.
+ * WARNING: This API contains intentional security vulnerabilities.
+ * Do NOT deploy in production.
+ */
+
+import express from 'express';
+import cors from 'cors';
+import { graphqlHTTP } from 'express-graphql';
+
+import { initDatabase, seedDatabase } from './database.js';
+import { decodeToken } from './middleware/auth.js';
+import { db } from './database.js';
+
+// Routes
+import authRouter from './routes/auth.js';
+import { usersRouter, usersRouterV1 } from './routes/users.js';
+import productsRouter from './routes/products.js';
+import toolsRouter from './routes/tools.js';
+import flagsRouter from './routes/flags.js';
+import graphqlSchema from './graphql/schema.js';
+
+const app = express();
+const PORT = process.env.PORT || 3001;
+const MODE = process.env.VULNAPI_MODE || 'challenge';
+
+// ==================== Middleware ====================
+
+// Parse JSON bodies
+app.use(express.json());
+
+// VULNERABILITY V08: CORS misconfiguration - allows all origins
+app.use(cors({
+  origin: '*',  // VULNERABLE: Should be specific origins
+  credentials: true,
+  methods: ['*'],
+  allowedHeaders: ['*'],
+  exposedHeaders: ['*'],
+}));
+
+// ==================== Routes ====================
+
+// Root endpoint
+app.get('/', (req, res) => {
+  res.json({
+    name: 'VulnAPI',
+    version: '0.2.0',
+    mode: MODE,
+    implementation: 'Express.js',
+    message: 'Welcome to VulnAPI - A deliberately vulnerable API',
+    endpoints: {
+      auth: '/api/login, /api/register',
+      users: '/api/users',
+      products: '/api/products',
+      tools: '/api/tools',
+      graphql: '/graphql/',
+      swagger_docs: '/docs (not implemented)',
+    },
+    mode_info: {
+      current: MODE,
+      challenge: 'Limited info - find vulnerabilities yourself',
+      documentation: 'Full details - exploitation steps and remediation',
+      switch: 'Set VULNAPI_MODE=documentation to enable full docs',
+    }
+  });
+});
+
+// Health check
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    implementation: 'express',
+    debug: process.env.DEBUG === 'true'
+  });
+});
+
+// API routes
+app.use('/api', authRouter);
+app.use('/api', usersRouter);
+app.use('/api', productsRouter);
+app.use('/api', toolsRouter);
+app.use('/api', flagsRouter);
+
+// VULNERABILITY V09: Old API version still accessible
+app.use('/api/v1', usersRouterV1);
+
+// GraphQL endpoint
+// VULNERABILITIES:
+// - G01: Introspection enabled (graphiql: true)
+// - G02: No query depth limits
+// - G03: Batching allowed (default behavior)
+// - G04: Field suggestions in errors (default behavior)
+// - G05: Missing authorization on resolvers
+app.use('/graphql', graphqlHTTP((req) => {
+  // Extract user from token for context (optional auth)
+  let user = null;
+  const authHeader = req.headers.authorization;
+
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.split(' ')[1];
+    const payload = decodeToken(token);
+
+    if (payload) {
+      user = db.prepare('SELECT * FROM users WHERE id = ?').get(payload.user_id);
+    }
+  }
+
+  return {
+    schema: graphqlSchema,
+    graphiql: true,  // VULNERABILITY G01: GraphiQL exposed
+    context: { user },
+    customFormatErrorFn: (error) => {
+      // VULNERABILITY G04: Field suggestions in error messages
+      return {
+        message: error.message,
+        locations: error.locations,
+        path: error.path,
+        // Include stack trace in development
+        stack: process.env.NODE_ENV !== 'production' ? error.stack : undefined
+      };
+    }
+  };
+}));
+
+// Documentation endpoint (simplified)
+app.get('/api/docs/mode', (req, res) => {
+  res.json({
+    mode: MODE,
+    description: MODE === 'documentation'
+      ? 'Full documentation mode - all details available'
+      : 'Challenge mode - limited information, find vulnerabilities yourself'
+  });
+});
+
+app.get('/api/docs/stats', (req, res) => {
+  res.json({
+    total_challenges: 15,
+    rest_challenges: 10,
+    graphql_challenges: 5,
+    categories: ['authentication', 'authorization', 'injection', 'misconfiguration', 'graphql']
+  });
+});
+
+// ==================== Start Server ====================
+
+// Initialize database
+initDatabase();
+seedDatabase();
+
+app.listen(PORT, () => {
+  console.log(`
+╔═══════════════════════════════════════════════════════════╗
+║                                                           ║
+║   VulnAPI - Express.js Implementation                     ║
+║   ⚠️  WARNING: Intentionally Vulnerable API               ║
+║                                                           ║
+║   Mode: ${MODE.padEnd(49)}║
+║   Server running on http://localhost:${PORT}               ║
+║                                                           ║
+║   Endpoints:                                              ║
+║   - REST API: http://localhost:${PORT}/api                 ║
+║   - GraphQL:  http://localhost:${PORT}/graphql/            ║
+║                                                           ║
+╚═══════════════════════════════════════════════════════════╝
+  `);
+});

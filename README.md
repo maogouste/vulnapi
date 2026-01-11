@@ -20,11 +20,21 @@ This software contains **intentional** vulnerabilities for educational purposes.
 vulnapi/
 ├── specs/                    # Shared API contract (OpenAPI, tests)
 ├── implementations/
-│   └── python-fastapi/       # Reference implementation
+│   ├── python-fastapi/       # Reference implementation (Python)
+│   └── node-express/         # Express.js implementation
 └── PROJECT_SPEC.md           # Full project specification
 ```
 
+## Implementations
+
+| Implementation | Language | Port | Status |
+|---------------|----------|------|--------|
+| python-fastapi | Python | 8000 | Complete |
+| node-express | Node.js | 3001 | Complete |
+
 ## Quick Start
+
+### Python/FastAPI (Reference)
 
 ```bash
 cd implementations/python-fastapi
@@ -42,6 +52,20 @@ uvicorn app.main:app --reload
 ```
 
 The API will be available at `http://localhost:8000`
+
+### Node.js/Express
+
+```bash
+cd implementations/node-express
+
+# Install dependencies
+npm install
+
+# Start the API
+npm start
+```
+
+The API will be available at `http://localhost:3001`
 
 ### Frontend (Optional)
 

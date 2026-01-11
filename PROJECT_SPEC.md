@@ -230,17 +230,17 @@ specs/
 
 ---
 
-## Future Reimplementations
+## Reimplementations
 
 The project is designed to be reimplemented in other languages:
 
-| Priority | Language | Framework | Justification |
-|----------|---------|-----------|---------------|
-| 1 | Python | FastAPI | Reference implementation |
-| 2 | JavaScript | Express.js | Very popular, large ecosystem |
-| 3 | Java | Spring Boot | Enterprise context |
-| 4 | Go | Gin | Cloud-native, modern |
-| 5 | PHP | Laravel | Legacy, still very present |
+| Priority | Language | Framework | Status | Justification |
+|----------|---------|-----------|--------|---------------|
+| 1 | Python | FastAPI | Completed | Reference implementation |
+| 2 | JavaScript | Express.js | Completed | Very popular, large ecosystem |
+| 3 | Java | Spring Boot | Planned | Enterprise context |
+| 4 | Go | Gin | Planned | Cloud-native, modern |
+| 5 | PHP | Laravel | Planned | Legacy, still very present |
 
 ### Rules for reimplementations
 
@@ -330,3 +330,4 @@ VULNAPI_DEBUG=true
 | 2026-01-11 | Phase 2 completed: GraphQL API + 5 GraphQL-specific vulnerabilities (G01-G05) |
 | 2026-01-11 | Phase 3 completed: Documentation mode with detailed vulnerability explanations |
 | 2026-01-11 | Phase 4 completed: React/Vite frontend with dashboard, consoles, and challenges UI |
+| 2026-01-11 | Express.js implementation completed: Full REST + GraphQL with all 15 vulnerabilities |
