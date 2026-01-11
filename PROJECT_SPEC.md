@@ -39,23 +39,31 @@ VulnAPI is an educational platform demonstrating security bad practices in APIs.
 | V09 | Improper Assets Management | `GET /api/v1/` vs `/api/v2/` |
 | V10 | Insufficient Logging | Missing audit trails |
 
-### Phase 2: GraphQL + Extended Challenges
+### Phase 2: GraphQL + Extended Challenges (COMPLETED)
 
 **Goal**: Add a GraphQL layer with specific vulnerabilities
 
 **Deliverables**:
-- `/graphql` endpoint with complete schema
+- `/graphql/` endpoint with complete schema
 - GraphQL-specific vulnerabilities
-- Additional challenges
+- 5 additional challenges (G01-G05)
+- GraphiQL UI for interactive queries
 
 **GraphQL-specific vulnerabilities**:
-| ID | Vulnerability | Description |
-|----|---------------|-------------|
-| G01 | Exposed introspection | Schema accessible in production |
-| G02 | Nested queries (DoS) | Unlimited nested queries |
-| G03 | Batching attacks | Multiple operations in one request |
-| G04 | Field suggestions | Aids enumeration |
-| G05 | Authorization bypass | Missing checks on resolvers |
+| ID | Vulnerability | Description | Endpoint |
+|----|---------------|-------------|----------|
+| G01 | Exposed introspection | Schema accessible via `__schema` | `/graphql/` |
+| G02 | Nested queries (DoS) | Unlimited query depth | `/graphql/` |
+| G03 | Batching attacks | Array of operations accepted | `/graphql/` |
+| G04 | Field suggestions | Error messages reveal field names | `/graphql/` |
+| G05 | Authorization bypass | Sensitive data without auth | `/graphql/` |
+
+**Implementation details**:
+- Framework: Strawberry GraphQL
+- Types: UserType, ProductType, OrderType, ChallengeType
+- Sensitive fields exposed: SSN, credit cards, API keys
+- No query depth/complexity limits
+- Batching enabled without restrictions
 
 ### Phase 3: Documentation Mode
 
@@ -252,8 +260,8 @@ VULNAPI_DEBUG=true
 ### For future sessions, remember:
 
 1. **Project**: VulnAPI - Intentionally vulnerable API for learning
-2. **Current phase**: Phase 1 completed (REST + Challenges)
-3. **Stack**: Python/FastAPI, then multi-language
+2. **Current phase**: Phase 2 completed (REST + GraphQL + 15 Challenges)
+3. **Stack**: Python/FastAPI + Strawberry GraphQL, then multi-language
 4. **Approach**: Incremental, each phase delivers value
 5. **Reference file**: This document `PROJECT_SPEC.md`
 
@@ -282,3 +290,4 @@ VULNAPI_DEBUG=true
 | 2026-01-11 | Python/FastAPI as reference implementation |
 | 2026-01-11 | Multi-language architecture planned from the start |
 | 2026-01-11 | Phase 1 completed: REST API + 10 OWASP vulnerabilities + flag system |
+| 2026-01-11 | Phase 2 completed: GraphQL API + 5 GraphQL-specific vulnerabilities (G01-G05) |

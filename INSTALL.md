@@ -68,6 +68,7 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
 - Swagger Documentation: http://localhost:8000/docs
 - ReDoc Documentation: http://localhost:8000/redoc
 - API Root: http://localhost:8000/
+- GraphQL Playground: http://localhost:8000/graphql/
 
 ## Docker Installation
 
@@ -87,6 +88,25 @@ curl http://localhost:8000/health
 
 # Expected response:
 # {"status":"healthy","debug":true}
+```
+
+## GraphQL Quick Test
+
+```bash
+# Test introspection (G01 vulnerability)
+curl -X POST http://localhost:8000/graphql/ \
+  -H "Content-Type: application/json" \
+  -d '{"query":"{ __schema { types { name } } }"}'
+
+# Test authorization bypass (G05 vulnerability)
+curl -X POST http://localhost:8000/graphql/ \
+  -H "Content-Type: application/json" \
+  -d '{"query":"{ users { id username ssn creditCard } }"}'
+
+# Test batching (G03 vulnerability)
+curl -X POST http://localhost:8000/graphql/ \
+  -H "Content-Type: application/json" \
+  -d '[{"query":"{ user(id:1) { username } }"},{"query":"{ user(id:2) { username } }"}]'
 ```
 
 ## Troubleshooting

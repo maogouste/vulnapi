@@ -43,14 +43,43 @@ uvicorn app.main:app --reload
 
 The API will be available at `http://localhost:8000`
 
+## Endpoints
+
+| Endpoint | Description |
+|----------|-------------|
+| `/docs` | Swagger UI documentation |
+| `/api/*` | REST API endpoints |
+| `/graphql/` | GraphQL endpoint + GraphiQL UI |
+
 ## Project Phases
 
 | Phase | Description | Status |
 |-------|-------------|--------|
-| 1 | REST API + Challenges | Completed |
-| 2 | GraphQL | Planned |
+| 1 | REST API + Challenges (V01-V10) | Completed |
+| 2 | GraphQL + Challenges (G01-G05) | Completed |
 | 3 | Documentation Mode | Planned |
 | 4 | Frontend | Planned |
+
+## Challenges
+
+### REST API (V01-V10)
+- V01: Broken Object Level Authorization (BOLA)
+- V02: Broken Authentication (JWT)
+- V03: Excessive Data Exposure
+- V04: Lack of Rate Limiting
+- V05: Mass Assignment
+- V06: SQL Injection
+- V07: Command Injection
+- V08: Security Misconfiguration
+- V09: Improper Assets Management
+- V10: Insufficient Logging
+
+### GraphQL (G01-G05)
+- G01: Introspection Exposed
+- G02: Nested Queries (DoS)
+- G03: Batching Attacks
+- G04: Field Suggestions
+- G05: Authorization Bypass
 
 ## Documentation
 
