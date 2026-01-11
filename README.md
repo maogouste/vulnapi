@@ -1,140 +1,142 @@
 # VulnAPI
 
-Intentionally vulnerable API for learning API security.
+Intentionally vulnerable API for learning API security. Available in 5 languages.
 
 ## Warning
 
-This software contains **intentional** vulnerabilities for educational purposes.
+This software contains **intentional** security vulnerabilities for educational purposes.
 **Never deploy in production.**
 
-## Goals
+## Quick Start
 
-- Understand OWASP API Security Top 10 vulnerabilities
-- Practice exploitation in a controlled environment
-- Compare REST vs GraphQL attack vectors
-- Learn how to secure your APIs
+```bash
+# Clone
+git clone https://github.com/maogouste/vulnapi.git
+cd vulnapi
 
-## Project Structure
-
-```
-vulnapi/
-├── specs/                    # Shared API contract (OpenAPI, tests)
-├── implementations/
-│   ├── python-fastapi/       # Reference implementation (Python)
-│   └── node-express/         # Express.js implementation
-└── PROJECT_SPEC.md           # Full project specification
+# Pick your backend
+cd implementations/python-fastapi && pip install -r requirements.txt && uvicorn app.main:app
+# or
+cd implementations/node-express && npm install && npm start
+# or
+cd implementations/go-gin && go run main.go
+# or
+cd implementations/php-laravel && php -S localhost:3003 index.php
+# or
+cd implementations/java-spring && mvn spring-boot:run
 ```
 
 ## Implementations
 
-| Implementation | Language | Port | Status |
-|---------------|----------|------|--------|
-| python-fastapi | Python | 8000 | Complete |
-| node-express | Node.js | 3001 | Complete |
+| Backend | Language | Port | Framework |
+|---------|----------|------|-----------|
+| python-fastapi | Python | 8000 | FastAPI |
+| node-express | Node.js | 3001 | Express.js |
+| go-gin | Go | 3002 | Gin |
+| php-laravel | PHP | 3003 | Vanilla PHP |
+| java-spring | Java | 3004 | Spring Boot |
 
-## Quick Start
+All implementations share:
+- Same vulnerabilities (V01-V10, G01-G05)
+- Same database schema
+- Same API endpoints
+- Same flags for CTF-style challenges
 
-### Python/FastAPI (Reference)
+## Vulnerabilities
 
-```bash
-cd implementations/python-fastapi
+### REST API (V01-V10)
 
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# venv\Scripts\activate   # Windows
+| ID | Name | OWASP |
+|----|------|-------|
+| V01 | Broken Object Level Authorization | API1:2023 |
+| V02 | Broken Authentication | API2:2023 |
+| V03 | Excessive Data Exposure | API3:2023 |
+| V04 | Lack of Rate Limiting | API4:2023 |
+| V05 | Mass Assignment | API6:2023 |
+| V06 | SQL Injection | API8:2023 |
+| V07 | Command Injection | API8:2023 |
+| V08 | Security Misconfiguration | API7:2023 |
+| V09 | Improper Assets Management | API9:2023 |
+| V10 | Insufficient Logging | API10:2023 |
 
-# Install dependencies
-pip install -r requirements.txt
+### GraphQL (G01-G05)
 
-# Start the API
-uvicorn app.main:app --reload
-```
-
-The API will be available at `http://localhost:8000`
-
-### Node.js/Express
-
-```bash
-cd implementations/node-express
-
-# Install dependencies
-npm install
-
-# Start the API
-npm start
-```
-
-The API will be available at `http://localhost:3001`
-
-### Frontend (Optional)
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-The frontend will be available at `http://localhost:3000`
+| ID | Name |
+|----|------|
+| G01 | Introspection Exposed |
+| G02 | Nested Queries (DoS) |
+| G03 | Batching Attacks |
+| G04 | Field Suggestions |
+| G05 | Authorization Bypass |
 
 ## Endpoints
 
 | Endpoint | Description |
 |----------|-------------|
-| `/docs` | Swagger UI documentation |
-| `/api/*` | REST API endpoints |
-| `/graphql/` | GraphQL endpoint + GraphiQL UI |
+| `/` | API info |
+| `/health` | Health check |
+| `/docs` | Swagger UI (FastAPI only) |
+| `/api/login` | Authentication |
+| `/api/users` | User management |
+| `/api/products` | Product catalog |
+| `/api/tools/ping` | Network tools |
+| `/api/v1/*` | Legacy API (V09) |
+| `/graphql` | GraphQL endpoint |
 
-## Project Phases
+## Modes
 
-| Phase | Description | Status |
-|-------|-------------|--------|
-| 1 | REST API + Challenges (V01-V10) | Completed |
-| 2 | GraphQL + Challenges (G01-G05) | Completed |
-| 3 | Documentation Mode | Completed |
-| 4 | Frontend (React/Vite) | Completed |
-
-## API Modes
-
-VulnAPI supports two modes:
-
-- **Challenge Mode** (default): Limited information, find vulnerabilities yourself
-- **Documentation Mode**: Full exploitation details, code examples, and remediation
-
-Switch modes with the environment variable:
 ```bash
-# Challenge mode (default)
+# Challenge mode (default) - find vulnerabilities yourself
 VULNAPI_MODE=challenge uvicorn app.main:app
 
-# Documentation mode
+# Documentation mode - full exploitation details
 VULNAPI_MODE=documentation uvicorn app.main:app
 ```
 
-## Challenges
+## Frontend
 
-### REST API (V01-V10)
-- V01: Broken Object Level Authorization (BOLA)
-- V02: Broken Authentication (JWT)
-- V03: Excessive Data Exposure
-- V04: Lack of Rate Limiting
-- V05: Mass Assignment
-- V06: SQL Injection
-- V07: Command Injection
-- V08: Security Misconfiguration
-- V09: Improper Assets Management
-- V10: Insufficient Logging
+A React frontend is included for interactive exploration:
 
-### GraphQL (G01-G05)
-- G01: Introspection Exposed
-- G02: Nested Queries (DoS)
-- G03: Batching Attacks
-- G04: Field Suggestions
-- G05: Authorization Bypass
+```bash
+cd implementations/python-fastapi/frontend
+npm install && npm run dev
+```
 
-## Documentation
+Access at http://localhost:3000 - includes a backend selector for all 5 implementations.
 
-See [PROJECT_SPEC.md](PROJECT_SPEC.md) for the full specification.
+## Docker
+
+```bash
+# Run all backends
+docker-compose up --build
+
+# Services will be available on ports 8000, 3001, 3002, 3003, 3004
+```
+
+## Test with API Security Checker
+
+Use [api-security-checker](https://github.com/maogouste/api-security-checker) to validate vulnerabilities:
+
+```bash
+# Install scanner
+pip install git+https://github.com/maogouste/api-security-checker.git
+
+# Scan VulnAPI
+apisec vulnapi                    # FastAPI
+apisec vulnapi --backend express  # Express.js
+apisec vulnapi --backend go       # Go
+apisec vulnapi --backend php      # PHP
+apisec vulnapi --backend java     # Java
+```
+
+## Default Credentials
+
+| Username | Password | Role |
+|----------|----------|------|
+| admin | admin123 | admin |
+| john | password123 | user |
+| jane | password456 | user |
 
 ## License
 
-[TBD]
+MIT - Educational use only.
