@@ -1,0 +1,5 @@
+vulnapi
+vulnapi.db
+*.db-shm
+*.db-wal
+.env

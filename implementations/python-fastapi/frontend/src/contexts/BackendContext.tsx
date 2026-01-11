@@ -23,6 +23,27 @@ export const BACKENDS: Backend[] = [
     language: 'Node.js',
     icon: '📦',
   },
+  {
+    id: 'go',
+    name: 'Gin',
+    baseUrl: 'http://localhost:3002',
+    language: 'Go',
+    icon: '🔷',
+  },
+  {
+    id: 'php',
+    name: 'PHP',
+    baseUrl: 'http://localhost:3003',
+    language: 'PHP',
+    icon: '🐘',
+  },
+  {
+    id: 'java',
+    name: 'Spring Boot',
+    baseUrl: 'http://localhost:3004',
+    language: 'Java',
+    icon: '☕',
+  },
 ];
 
 interface BackendContextType {

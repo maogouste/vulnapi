@@ -1,0 +1,12 @@
+vulnapi.db
+*.db-shm
+*.db-wal
+.env
+target/
+*.class
+*.jar
+.idea/
+*.iml
+.settings/
+.project
+.classpath

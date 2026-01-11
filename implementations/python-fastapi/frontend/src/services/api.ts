@@ -15,6 +15,9 @@ function getBaseUrl(): string {
   const backends: Record<string, string> = {
     fastapi: 'http://localhost:8000',
     express: 'http://localhost:3001',
+    go: 'http://localhost:3002',
+    php: 'http://localhost:3003',
+    java: 'http://localhost:3004',
   };
   return backends[backendId] || backends.fastapi;
 }
