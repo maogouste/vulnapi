@@ -194,6 +194,16 @@ func initDB() {
 		flag_value TEXT NOT NULL,
 		description TEXT
 	);
+	CREATE TABLE IF NOT EXISTS orders (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		user_id INTEGER NOT NULL,
+		status TEXT DEFAULT 'pending',
+		total_amount REAL DEFAULT 0,
+		shipping_address TEXT,
+		notes TEXT,
+		created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+		FOREIGN KEY (user_id) REFERENCES users(id)
+	);
 	`
 	db.Exec(schema)
 
@@ -270,6 +280,25 @@ func seedDatabase() {
 
 	for _, f := range flags {
 		db.Exec(`INSERT INTO flags (challenge_id, flag_value, description) VALUES (?, ?, ?)`, f.id, f.value, f.desc)
+	}
+
+	// Orders (for G02 depth testing)
+	orders := []struct {
+		userId          int
+		status          string
+		total           float64
+		shippingAddress string
+		notes           string
+	}{
+		{1, "completed", 1349.98, "123 Admin St, Server City", "Admin's test order"},
+		{2, "pending", 199.98, "456 User Ave, Client Town", "John's order - sensitive shipping info"},
+		{2, "shipped", 79.99, "456 User Ave, Client Town", "John's second order"},
+		{3, "completed", 549.98, "789 Jane Ln, Data Village", "VULNAPI{graphql_depth_resource_exhaustion}"},
+	}
+
+	for _, o := range orders {
+		db.Exec(`INSERT INTO orders (user_id, status, total_amount, shipping_address, notes) VALUES (?, ?, ?, ?, ?)`,
+			o.userId, o.status, o.total, o.shippingAddress, o.notes)
 	}
 
 	log.Println("[*] Database seeded successfully!")
@@ -713,22 +742,12 @@ func loadVulnerabilities() []interface{} {
 	return []interface{}{}
 }
 
-// GraphQL
+// GraphQL with full vulnerabilities G01-G05
 func graphqlHandler() gin.HandlerFunc {
-	userType := graphql.NewObject(graphql.ObjectConfig{
-		Name: "User",
-		Fields: graphql.Fields{
-			"id":         &graphql.Field{Type: graphql.Int},
-			"username":   &graphql.Field{Type: graphql.String},
-			"email":      &graphql.Field{Type: graphql.String},
-			"role":       &graphql.Field{Type: graphql.String},
-			"ssn":        &graphql.Field{Type: graphql.String},
-			"creditCard": &graphql.Field{Type: graphql.String},
-			"secretNote": &graphql.Field{Type: graphql.String},
-			"apiKey":     &graphql.Field{Type: graphql.String},
-		},
-	})
+	// Forward declarations for circular references (G02)
+	var userType, orderType *graphql.Object
 
+	// Product type - VULNERABILITY G05: Exposes internal data without auth
 	productType := graphql.NewObject(graphql.ObjectConfig{
 		Name: "Product",
 		Fields: graphql.Fields{
@@ -738,9 +757,85 @@ func graphqlHandler() gin.HandlerFunc {
 			"price":         &graphql.Field{Type: graphql.Float},
 			"stock":         &graphql.Field{Type: graphql.Int},
 			"category":      &graphql.Field{Type: graphql.String},
-			"internalNotes": &graphql.Field{Type: graphql.String},
-			"supplierCost":  &graphql.Field{Type: graphql.Float},
+			"internalNotes": &graphql.Field{Type: graphql.String}, // VULNERABILITY: Internal data
+			"supplierCost":  &graphql.Field{Type: graphql.Float},  // VULNERABILITY: Internal data
 		},
+	})
+
+	// Order type - VULNERABILITY G02: Enables nesting back to User (circular)
+	orderType = graphql.NewObject(graphql.ObjectConfig{
+		Name: "Order",
+		Fields: (graphql.FieldsThunk)(func() graphql.Fields {
+			return graphql.Fields{
+				"id":              &graphql.Field{Type: graphql.Int},
+				"userId":          &graphql.Field{Type: graphql.Int},
+				"status":          &graphql.Field{Type: graphql.String},
+				"totalAmount":     &graphql.Field{Type: graphql.Float},
+				"shippingAddress": &graphql.Field{Type: graphql.String},
+				"notes":           &graphql.Field{Type: graphql.String},
+				// VULNERABILITY G02: Circular reference enables deep nesting
+				"user": &graphql.Field{
+					Type:        userType,
+					Description: "VULNERABILITY G02: Enables deep nesting (order->user->orders->user...)",
+					Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+						order := p.Source.(map[string]interface{})
+						userId := order["userId"].(int)
+						var username, email, role string
+						var ssn, creditCard, secretNote, apiKey *string
+						db.QueryRow("SELECT username, email, role, ssn, credit_card, secret_note, api_key FROM users WHERE id = ?", userId).
+							Scan(&username, &email, &role, &ssn, &creditCard, &secretNote, &apiKey)
+						return map[string]interface{}{
+							"id": userId, "username": username, "email": email, "role": role,
+							"ssn": ssn, "creditCard": creditCard, "secretNote": secretNote, "apiKey": apiKey,
+						}, nil
+					},
+				},
+			}
+		}),
+	})
+
+	// User type - VULNERABILITY G02, G05: Exposes sensitive fields and enables nesting
+	userType = graphql.NewObject(graphql.ObjectConfig{
+		Name: "User",
+		Fields: (graphql.FieldsThunk)(func() graphql.Fields {
+			return graphql.Fields{
+				"id":         &graphql.Field{Type: graphql.Int},
+				"username":   &graphql.Field{Type: graphql.String},
+				"email":      &graphql.Field{Type: graphql.String},
+				"role":       &graphql.Field{Type: graphql.String},
+				"ssn":        &graphql.Field{Type: graphql.String}, // VULNERABILITY G05: Sensitive
+				"creditCard": &graphql.Field{Type: graphql.String}, // VULNERABILITY G05: Sensitive
+				"secretNote": &graphql.Field{Type: graphql.String}, // VULNERABILITY G05: Sensitive
+				"apiKey":     &graphql.Field{Type: graphql.String}, // VULNERABILITY G05: Sensitive
+				// VULNERABILITY G02: Circular reference enables deep nesting
+				"orders": &graphql.Field{
+					Type:        graphql.NewList(orderType),
+					Description: "VULNERABILITY G02: Enables deep nesting (user->orders->user->orders...)",
+					Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+						user := p.Source.(map[string]interface{})
+						userId := user["id"].(int)
+						rows, _ := db.Query("SELECT id, user_id, status, total_amount, shipping_address, notes FROM orders WHERE user_id = ?", userId)
+						if rows == nil {
+							return []map[string]interface{}{}, nil
+						}
+						defer rows.Close()
+						var orders []map[string]interface{}
+						for rows.Next() {
+							var id, uid int
+							var status string
+							var total float64
+							var addr, notes *string
+							rows.Scan(&id, &uid, &status, &total, &addr, &notes)
+							orders = append(orders, map[string]interface{}{
+								"id": id, "userId": uid, "status": status, "totalAmount": total,
+								"shippingAddress": addr, "notes": notes,
+							})
+						}
+						return orders, nil
+					},
+				},
+			}
+		}),
 	})
 
 	authPayloadType := graphql.NewObject(graphql.ObjectConfig{
@@ -753,11 +848,14 @@ func graphqlHandler() gin.HandlerFunc {
 		},
 	})
 
+	// Query type - VULNERABILITY G05: No auth checks on sensitive queries
 	queryType := graphql.NewObject(graphql.ObjectConfig{
 		Name: "Query",
 		Fields: graphql.Fields{
+			// VULNERABILITY G05: No authentication - exposes all users with sensitive data
 			"users": &graphql.Field{
-				Type: graphql.NewList(userType),
+				Type:        graphql.NewList(userType),
+				Description: "VULNERABILITY G05: No auth check - exposes all users with sensitive data",
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 					rows, _ := db.Query("SELECT id, username, email, role, ssn, credit_card, secret_note, api_key FROM users")
 					defer rows.Close()
@@ -775,8 +873,10 @@ func graphqlHandler() gin.HandlerFunc {
 					return users, nil
 				},
 			},
+			// VULNERABILITY G05: No authorization check - any user can access any user's data
 			"user": &graphql.Field{
-				Type: userType,
+				Type:        userType,
+				Description: "VULNERABILITY G05: No authorization check",
 				Args: graphql.FieldConfigArgument{
 					"id": &graphql.ArgumentConfig{Type: graphql.NewNonNull(graphql.Int)},
 				},
@@ -813,9 +913,35 @@ func graphqlHandler() gin.HandlerFunc {
 					return products, nil
 				},
 			},
+			// VULNERABILITY G05: No auth - exposes all orders
+			"orders": &graphql.Field{
+				Type:        graphql.NewList(orderType),
+				Description: "VULNERABILITY G05: No authentication - exposes all orders",
+				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+					rows, _ := db.Query("SELECT id, user_id, status, total_amount, shipping_address, notes FROM orders")
+					if rows == nil {
+						return []map[string]interface{}{}, nil
+					}
+					defer rows.Close()
+					var orders []map[string]interface{}
+					for rows.Next() {
+						var id, uid int
+						var status string
+						var total float64
+						var addr, notes *string
+						rows.Scan(&id, &uid, &status, &total, &addr, &notes)
+						orders = append(orders, map[string]interface{}{
+							"id": id, "userId": uid, "status": status, "totalAmount": total,
+							"shippingAddress": addr, "notes": notes,
+						})
+					}
+					return orders, nil
+				},
+			},
 		},
 	})
 
+	// Mutation type - VULNERABILITY G05: No proper auth checks
 	mutationType := graphql.NewObject(graphql.ObjectConfig{
 		Name: "Mutation",
 		Fields: graphql.Fields{
@@ -841,20 +967,35 @@ func graphqlHandler() gin.HandlerFunc {
 					}, nil
 				},
 			},
+			// VULNERABILITY G05: No authorization - anyone can update anyone
 			"updateUser": &graphql.Field{
-				Type: userType,
+				Type:        userType,
+				Description: "VULNERABILITY G05: No authorization check - anyone can update anyone",
 				Args: graphql.FieldConfigArgument{
-					"id":   &graphql.ArgumentConfig{Type: graphql.NewNonNull(graphql.Int)},
-					"role": &graphql.ArgumentConfig{Type: graphql.String},
+					"id":       &graphql.ArgumentConfig{Type: graphql.NewNonNull(graphql.Int)},
+					"username": &graphql.ArgumentConfig{Type: graphql.String},
+					"email":    &graphql.ArgumentConfig{Type: graphql.String},
+					"role":     &graphql.ArgumentConfig{Type: graphql.String}, // VULNERABILITY: Can escalate privileges
 				},
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 					id := p.Args["id"].(int)
 					if role, ok := p.Args["role"].(string); ok {
 						db.Exec("UPDATE users SET role = ? WHERE id = ?", role, id)
 					}
+					if username, ok := p.Args["username"].(string); ok {
+						db.Exec("UPDATE users SET username = ? WHERE id = ?", username, id)
+					}
+					if email, ok := p.Args["email"].(string); ok {
+						db.Exec("UPDATE users SET email = ? WHERE id = ?", email, id)
+					}
 					var username, email, role string
-					db.QueryRow("SELECT username, email, role FROM users WHERE id = ?", id).Scan(&username, &email, &role)
-					return map[string]interface{}{"id": id, "username": username, "email": email, "role": role}, nil
+					var ssn, creditCard, secretNote, apiKey *string
+					db.QueryRow("SELECT username, email, role, ssn, credit_card, secret_note, api_key FROM users WHERE id = ?", id).
+						Scan(&username, &email, &role, &ssn, &creditCard, &secretNote, &apiKey)
+					return map[string]interface{}{
+						"id": id, "username": username, "email": email, "role": role,
+						"ssn": ssn, "creditCard": creditCard, "secretNote": secretNote, "apiKey": apiKey,
+					}, nil
 				},
 			},
 		},
@@ -865,13 +1006,93 @@ func graphqlHandler() gin.HandlerFunc {
 		Mutation: mutationType,
 	})
 
-	h := handler.New(&handler.Config{
-		Schema:   &schema,
-		Pretty:   true,
-		GraphiQL: true, // VULNERABILITY G01
-	})
-
+	// Custom handler for G03 (batching) and G04 (field suggestions)
 	return func(c *gin.Context) {
-		h.ServeHTTP(c.Writer, c.Request)
+		if c.Request.Method == "GET" {
+			// Serve GraphiQL UI - VULNERABILITY G01
+			h := handler.New(&handler.Config{
+				Schema:   &schema,
+				Pretty:   true,
+				GraphiQL: true,
+			})
+			h.ServeHTTP(c.Writer, c.Request)
+			return
+		}
+
+		// POST - Handle batching (G03)
+		var body interface{}
+		if err := json.NewDecoder(c.Request.Body).Decode(&body); err != nil {
+			c.JSON(400, gin.H{"errors": []gin.H{{"message": "Invalid JSON"}}})
+			return
+		}
+
+		// VULNERABILITY G03: Process batched queries without any limits
+		if queries, ok := body.([]interface{}); ok {
+			// Batched query - process each one without limits
+			var results []map[string]interface{}
+			for _, q := range queries {
+				qMap := q.(map[string]interface{})
+				query := qMap["query"].(string)
+				var variables map[string]interface{}
+				if v, ok := qMap["variables"].(map[string]interface{}); ok {
+					variables = v
+				}
+				result := graphql.Do(graphql.Params{
+					Schema:         schema,
+					RequestString:  query,
+					VariableValues: variables,
+				})
+				respData := map[string]interface{}{"data": result.Data}
+				if len(result.Errors) > 0 {
+					// VULNERABILITY G04: Include field suggestions in errors
+					var errs []map[string]interface{}
+					for _, e := range result.Errors {
+						errs = append(errs, map[string]interface{}{
+							"message":   e.Message,
+							"locations": e.Locations,
+							"path":      e.Path,
+						})
+					}
+					respData["errors"] = errs
+				}
+				results = append(results, respData)
+			}
+			c.JSON(200, results)
+			return
+		}
+
+		// Single query
+		qMap := body.(map[string]interface{})
+		query := qMap["query"].(string)
+		var variables map[string]interface{}
+		if v, ok := qMap["variables"].(map[string]interface{}); ok {
+			variables = v
+		}
+		var operationName string
+		if op, ok := qMap["operationName"].(string); ok {
+			operationName = op
+		}
+
+		result := graphql.Do(graphql.Params{
+			Schema:         schema,
+			RequestString:  query,
+			VariableValues: variables,
+			OperationName:  operationName,
+		})
+
+		respData := map[string]interface{}{"data": result.Data}
+		if len(result.Errors) > 0 {
+			// VULNERABILITY G04: Include detailed error messages with field suggestions
+			var errs []map[string]interface{}
+			for _, e := range result.Errors {
+				errs = append(errs, map[string]interface{}{
+					"message":   e.Message,
+					"locations": e.Locations,
+					"path":      e.Path,
+				})
+			}
+			respData["errors"] = errs
+		}
+		c.JSON(200, respData)
 	}
 }

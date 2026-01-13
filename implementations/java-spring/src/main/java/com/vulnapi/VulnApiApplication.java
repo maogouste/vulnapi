@@ -125,6 +125,18 @@ public class VulnApiApplication {
                 description TEXT
             )
         """);
+        jdbc.execute("""
+            CREATE TABLE IF NOT EXISTS orders (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                status TEXT DEFAULT 'pending',
+                total_amount REAL DEFAULT 0,
+                shipping_address TEXT,
+                notes TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id)
+            )
+        """);
 
         Integer count = jdbc.queryForObject("SELECT COUNT(*) FROM users", Integer.class);
         if (count == 0) seedDatabase();
@@ -180,6 +192,19 @@ public class VulnApiApplication {
 
         for (String[] f : flags) {
             jdbc.update("INSERT INTO flags (challenge_id, flag_value, description) VALUES (?, ?, ?)", f[0], f[1], f[2]);
+        }
+
+        // Orders (for G02 depth testing)
+        Object[][] orders = {
+            {1, "completed", 1349.98, "123 Admin St, Server City", "Admin's test order"},
+            {2, "pending", 199.98, "456 User Ave, Client Town", "John's order - sensitive shipping info"},
+            {2, "shipped", 79.99, "456 User Ave, Client Town", "John's second order"},
+            {3, "completed", 549.98, "789 Jane Ln, Data Village", "VULNAPI{graphql_depth_resource_exhaustion}"},
+        };
+
+        for (Object[] o : orders) {
+            jdbc.update("INSERT INTO orders (user_id, status, total_amount, shipping_address, notes) VALUES (?, ?, ?, ?, ?)",
+                o[0], o[1], o[2], o[3], o[4]);
         }
 
         System.out.println("[*] Database seeded successfully!");
@@ -505,32 +530,95 @@ public class VulnApiApplication {
             .orElse(ResponseEntity.status(404).body(Map.of("detail", "Vulnerability " + id + " not found")));
     }
 
-    // GraphQL
+    /**
+     * GraphQL with full vulnerabilities G01-G05
+     *
+     * VULNERABILITIES:
+     * - G01: Introspection enabled (default in graphql-java)
+     * - G02: No query depth limits (nested queries via User <-> Order)
+     * - G03: Batching enabled without limits
+     * - G04: Field suggestions enabled (default in graphql-java)
+     * - G05: No authentication checks on sensitive queries
+     */
     private void initGraphQL() {
+        // Use GraphQLTypeReference for circular references (G02)
+        GraphQLTypeReference userTypeRef = GraphQLTypeReference.typeRef("User");
+        GraphQLTypeReference orderTypeRef = GraphQLTypeReference.typeRef("Order");
+
+        // Order type - VULNERABILITY G02: Enables circular nesting back to User
+        GraphQLObjectType orderType = GraphQLObjectType.newObject()
+            .name("Order")
+            .field(f -> f.name("id").type(Scalars.GraphQLInt))
+            .field(f -> f.name("userId").type(Scalars.GraphQLInt))
+            .field(f -> f.name("status").type(Scalars.GraphQLString))
+            .field(f -> f.name("totalAmount").type(Scalars.GraphQLFloat))
+            .field(f -> f.name("shippingAddress").type(Scalars.GraphQLString))
+            .field(f -> f.name("notes").type(Scalars.GraphQLString))
+            // G02: Circular reference to User
+            .field(f -> f.name("user").type(userTypeRef)
+                .dataFetcher(env -> {
+                    Map<String, Object> order = env.getSource();
+                    int userId = ((Number) order.get("userId")).intValue();
+                    var r = jdbc.queryForMap("SELECT * FROM users WHERE id = ?", userId);
+                    Map<String, Object> m = new HashMap<>();
+                    m.put("id", r.get("id")); m.put("username", r.get("username")); m.put("email", r.get("email"));
+                    m.put("role", r.get("role")); m.put("ssn", r.get("ssn")); m.put("creditCard", r.get("credit_card"));
+                    m.put("secretNote", r.get("secret_note")); m.put("apiKey", r.get("api_key"));
+                    return m;
+                }))
+            .build();
+
+        // User type - VULNERABILITY G02, G05: Exposes sensitive fields and enables circular nesting
         GraphQLObjectType userType = GraphQLObjectType.newObject()
             .name("User")
             .field(f -> f.name("id").type(Scalars.GraphQLInt))
             .field(f -> f.name("username").type(Scalars.GraphQLString))
             .field(f -> f.name("email").type(Scalars.GraphQLString))
             .field(f -> f.name("role").type(Scalars.GraphQLString))
-            .field(f -> f.name("ssn").type(Scalars.GraphQLString))
-            .field(f -> f.name("creditCard").type(Scalars.GraphQLString))
-            .field(f -> f.name("secretNote").type(Scalars.GraphQLString))
-            .field(f -> f.name("apiKey").type(Scalars.GraphQLString))
+            .field(f -> f.name("ssn").type(Scalars.GraphQLString))          // G05: Sensitive data
+            .field(f -> f.name("creditCard").type(Scalars.GraphQLString))   // G05: Sensitive data
+            .field(f -> f.name("secretNote").type(Scalars.GraphQLString))   // G05: Sensitive data
+            .field(f -> f.name("apiKey").type(Scalars.GraphQLString))       // G05: Sensitive data
+            // G02: Circular reference to Orders
+            .field(f -> f.name("orders").type(GraphQLList.list(orderType))
+                .dataFetcher(env -> {
+                    Map<String, Object> user = env.getSource();
+                    int userId = ((Number) user.get("id")).intValue();
+                    var rows = jdbc.queryForList("SELECT * FROM orders WHERE user_id = ?", userId);
+                    return rows.stream().map(r -> {
+                        Map<String, Object> m = new HashMap<>();
+                        m.put("id", r.get("id")); m.put("userId", r.get("user_id")); m.put("status", r.get("status"));
+                        m.put("totalAmount", r.get("total_amount")); m.put("shippingAddress", r.get("shipping_address"));
+                        m.put("notes", r.get("notes"));
+                        return m;
+                    }).toList();
+                }))
             .build();
 
+        // Product type - G05: Exposes internal data
         GraphQLObjectType productType = GraphQLObjectType.newObject()
             .name("Product")
             .field(f -> f.name("id").type(Scalars.GraphQLInt))
             .field(f -> f.name("name").type(Scalars.GraphQLString))
             .field(f -> f.name("description").type(Scalars.GraphQLString))
             .field(f -> f.name("price").type(Scalars.GraphQLFloat))
-            .field(f -> f.name("internalNotes").type(Scalars.GraphQLString))
-            .field(f -> f.name("supplierCost").type(Scalars.GraphQLFloat))
+            .field(f -> f.name("internalNotes").type(Scalars.GraphQLString)) // G05: Internal data
+            .field(f -> f.name("supplierCost").type(Scalars.GraphQLFloat))   // G05: Internal data
             .build();
 
+        // Auth payload type
+        GraphQLObjectType authPayloadType = GraphQLObjectType.newObject()
+            .name("AuthPayload")
+            .field(f -> f.name("accessToken").type(Scalars.GraphQLString))
+            .field(f -> f.name("tokenType").type(Scalars.GraphQLString))
+            .field(f -> f.name("userId").type(Scalars.GraphQLInt))
+            .field(f -> f.name("role").type(Scalars.GraphQLString))
+            .build();
+
+        // Query type - G05: No auth checks on sensitive queries
         GraphQLObjectType queryType = GraphQLObjectType.newObject()
             .name("Query")
+            // G05: No authentication - exposes all users with sensitive data
             .field(f -> f.name("users").type(GraphQLList.list(userType))
                 .dataFetcher(env -> {
                     var rows = jdbc.queryForList("SELECT * FROM users");
@@ -542,6 +630,18 @@ public class VulnApiApplication {
                         return m;
                     }).toList();
                 }))
+            // G05: No authorization check
+            .field(f -> f.name("user").type(userType)
+                .argument(a -> a.name("id").type(Scalars.GraphQLInt))
+                .dataFetcher(env -> {
+                    int id = env.getArgument("id");
+                    var r = jdbc.queryForMap("SELECT * FROM users WHERE id = ?", id);
+                    Map<String, Object> m = new HashMap<>();
+                    m.put("id", r.get("id")); m.put("username", r.get("username")); m.put("email", r.get("email"));
+                    m.put("role", r.get("role")); m.put("ssn", r.get("ssn")); m.put("creditCard", r.get("credit_card"));
+                    m.put("secretNote", r.get("secret_note")); m.put("apiKey", r.get("api_key"));
+                    return m;
+                }))
             .field(f -> f.name("products").type(GraphQLList.list(productType))
                 .dataFetcher(env -> {
                     var rows = jdbc.queryForList("SELECT * FROM products");
@@ -552,25 +652,113 @@ public class VulnApiApplication {
                         return m;
                     }).toList();
                 }))
+            // G05: No auth - exposes all orders
+            .field(f -> f.name("orders").type(GraphQLList.list(orderType))
+                .dataFetcher(env -> {
+                    var rows = jdbc.queryForList("SELECT * FROM orders");
+                    return rows.stream().map(r -> {
+                        Map<String, Object> m = new HashMap<>();
+                        m.put("id", r.get("id")); m.put("userId", r.get("user_id")); m.put("status", r.get("status"));
+                        m.put("totalAmount", r.get("total_amount")); m.put("shippingAddress", r.get("shipping_address"));
+                        m.put("notes", r.get("notes"));
+                        return m;
+                    }).toList();
+                }))
             .build();
 
-        GraphQLSchema schema = GraphQLSchema.newSchema().query(queryType).build();
+        // Mutation type - G05: No proper auth checks
+        GraphQLObjectType mutationType = GraphQLObjectType.newObject()
+            .name("Mutation")
+            .field(f -> f.name("login").type(authPayloadType)
+                .argument(a -> a.name("username").type(Scalars.GraphQLString))
+                .argument(a -> a.name("password").type(Scalars.GraphQLString))
+                .dataFetcher(env -> {
+                    String username = env.getArgument("username");
+                    String password = env.getArgument("password");
+                    try {
+                        var user = jdbc.queryForMap("SELECT * FROM users WHERE username = ?", username);
+                        if (encoder.matches(password, (String) user.get("password_hash"))) {
+                            String token = createToken(user);
+                            return Map.of("accessToken", token, "tokenType", "bearer", "userId", user.get("id"), "role", user.get("role"));
+                        }
+                    } catch (Exception ignored) {}
+                    throw new RuntimeException("Invalid credentials");
+                }))
+            // G05: No authorization - anyone can update anyone
+            .field(f -> f.name("updateUser").type(userType)
+                .argument(a -> a.name("id").type(Scalars.GraphQLInt))
+                .argument(a -> a.name("username").type(Scalars.GraphQLString))
+                .argument(a -> a.name("email").type(Scalars.GraphQLString))
+                .argument(a -> a.name("role").type(Scalars.GraphQLString)) // G05: Can escalate privileges!
+                .dataFetcher(env -> {
+                    int id = env.getArgument("id");
+                    String role = env.getArgument("role");
+                    String username = env.getArgument("username");
+                    String email = env.getArgument("email");
+                    if (role != null) jdbc.update("UPDATE users SET role = ? WHERE id = ?", role, id);
+                    if (username != null) jdbc.update("UPDATE users SET username = ? WHERE id = ?", username, id);
+                    if (email != null) jdbc.update("UPDATE users SET email = ? WHERE id = ?", email, id);
+                    var r = jdbc.queryForMap("SELECT * FROM users WHERE id = ?", id);
+                    Map<String, Object> m = new HashMap<>();
+                    m.put("id", r.get("id")); m.put("username", r.get("username")); m.put("email", r.get("email"));
+                    m.put("role", r.get("role")); m.put("ssn", r.get("ssn")); m.put("creditCard", r.get("credit_card"));
+                    return m;
+                }))
+            .build();
+
+        GraphQLSchema schema = GraphQLSchema.newSchema()
+            .query(queryType)
+            .mutation(mutationType)
+            .build();
         this.graphQL = GraphQL.newGraphQL(schema).build();
     }
 
     @RequestMapping(value = {"/graphql", "/graphql/"}, method = {RequestMethod.GET, RequestMethod.POST})
-    public ResponseEntity<?> graphql(@RequestBody(required = false) Map<String, Object> body, @RequestParam(required = false) String query) {
-        String q = query != null ? query : (body != null ? (String) body.get("query") : null);
+    public ResponseEntity<?> graphql(@RequestBody(required = false) Object body, @RequestParam(required = false) String query) {
+        // VULNERABILITY G03: Process batched queries without any limits
+        if (body instanceof List<?> batchedQueries) {
+            List<Map<String, Object>> results = new ArrayList<>();
+            for (Object q : batchedQueries) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> queryMap = (Map<String, Object>) q;
+                results.add(executeGraphQL((String) queryMap.get("query"), queryMap.get("variables")));
+            }
+            return ResponseEntity.ok(results);
+        }
+
+        // Single query
+        String q = query;
+        Object variables = null;
+        if (body instanceof Map<?, ?> bodyMap) {
+            if (q == null) q = (String) bodyMap.get("query");
+            variables = bodyMap.get("variables");
+        }
+
         if (q == null) {
             return ResponseEntity.ok(Map.of("data", null, "errors", List.of(Map.of("message", "No query provided"))));
         }
 
-        ExecutionResult result = graphQL.execute(q);
+        return ResponseEntity.ok(executeGraphQL(q, variables));
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> executeGraphQL(String query, Object variables) {
+        ExecutionInput.Builder inputBuilder = ExecutionInput.newExecutionInput().query(query);
+        if (variables instanceof Map) {
+            inputBuilder.variables((Map<String, Object>) variables);
+        }
+
+        ExecutionResult result = graphQL.execute(inputBuilder.build());
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("data", result.getData());
         if (!result.getErrors().isEmpty()) {
-            response.put("errors", result.getErrors().stream().map(e -> Map.of("message", e.getMessage())).toList());
+            // VULNERABILITY G04: Include detailed error messages with field suggestions
+            response.put("errors", result.getErrors().stream().map(e -> Map.of(
+                "message", e.getMessage(),
+                "locations", e.getLocations() != null ? e.getLocations() : List.of(),
+                "path", e.getPath() != null ? e.getPath() : List.of()
+            )).toList());
         }
-        return ResponseEntity.ok(response);
+        return response;
     }
 }

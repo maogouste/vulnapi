@@ -195,6 +195,16 @@ function initDatabase($db) {
             flag_value TEXT NOT NULL,
             description TEXT
         );
+        CREATE TABLE IF NOT EXISTS orders (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            status TEXT DEFAULT 'pending',
+            total_amount REAL DEFAULT 0,
+            shipping_address TEXT,
+            notes TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        );
     ");
 
     // Seed if empty
@@ -279,6 +289,25 @@ function seedDatabase($db) {
         $stmt->bindValue(1, $f[0]);
         $stmt->bindValue(2, $f[1]);
         $stmt->bindValue(3, $f[2]);
+        $stmt->execute();
+        $stmt->reset();
+    }
+
+    // Orders (for G02 depth testing)
+    $orders = [
+        [1, 'completed', 1349.98, '123 Admin St, Server City', "Admin's test order"],
+        [2, 'pending', 199.98, '456 User Ave, Client Town', "John's order - sensitive shipping info"],
+        [2, 'shipped', 79.99, '456 User Ave, Client Town', "John's second order"],
+        [3, 'completed', 549.98, '789 Jane Ln, Data Village', 'VULNAPI{graphql_depth_resource_exhaustion}'],
+    ];
+
+    $stmt = $db->prepare("INSERT INTO orders (user_id, status, total_amount, shipping_address, notes) VALUES (?, ?, ?, ?, ?)");
+    foreach ($orders as $o) {
+        $stmt->bindValue(1, $o[0]);
+        $stmt->bindValue(2, $o[1]);
+        $stmt->bindValue(3, $o[2]);
+        $stmt->bindValue(4, $o[3]);
+        $stmt->bindValue(5, $o[4]);
         $stmt->execute();
         $stmt->reset();
     }
@@ -647,29 +676,141 @@ function handleDocsVulnerability($id) {
     echo json_encode(['detail' => "Vulnerability $id not found"]);
 }
 
-// GraphQL handler (simplified)
+/**
+ * GraphQL handler with full vulnerabilities G01-G05
+ *
+ * VULNERABILITIES:
+ * - G01: Introspection enabled (schema accessible)
+ * - G02: No query depth limits (nested queries possible)
+ * - G03: Batching enabled without limits
+ * - G04: Field suggestions in error messages
+ * - G05: No authentication checks on sensitive queries
+ */
 function handleGraphQL($db) {
-    $data = getJsonBody();
-    $query = $data['query'] ?? '';
+    $body = json_decode(file_get_contents('php://input'), true);
 
-    // Simple GraphQL parser for basic queries
-    if (strpos($query, '__schema') !== false) {
-        // G01: Introspection enabled
-        echo json_encode([
-            'data' => [
-                '__schema' => [
-                    'types' => [
-                        ['name' => 'User', 'fields' => [['name' => 'id'], ['name' => 'username'], ['name' => 'ssn'], ['name' => 'creditCard']]],
-                        ['name' => 'Product', 'fields' => [['name' => 'id'], ['name' => 'name'], ['name' => 'internalNotes']]],
-                    ],
-                ],
-            ],
-        ]);
+    // VULNERABILITY G03: Process batched queries without any limits
+    if (isset($body[0])) {
+        // Batched query - process each one without limits
+        $results = [];
+        foreach ($body as $operation) {
+            $results[] = executeGraphQLQuery($db, $operation['query'] ?? '', $operation['variables'] ?? []);
+        }
+        echo json_encode($results);
         return;
     }
 
+    // Single query
+    $result = executeGraphQLQuery($db, $body['query'] ?? '', $body['variables'] ?? []);
+    echo json_encode($result);
+}
+
+function executeGraphQLQuery($db, $query, $variables) {
+    // VULNERABILITY G01: Introspection enabled
+    if (strpos($query, '__schema') !== false) {
+        return [
+            'data' => [
+                '__schema' => [
+                    'queryType' => ['name' => 'Query'],
+                    'mutationType' => ['name' => 'Mutation'],
+                    'types' => [
+                        [
+                            'name' => 'User',
+                            'kind' => 'OBJECT',
+                            'fields' => [
+                                ['name' => 'id', 'type' => ['name' => 'Int']],
+                                ['name' => 'username', 'type' => ['name' => 'String']],
+                                ['name' => 'email', 'type' => ['name' => 'String']],
+                                ['name' => 'role', 'type' => ['name' => 'String']],
+                                ['name' => 'ssn', 'type' => ['name' => 'String']],
+                                ['name' => 'creditCard', 'type' => ['name' => 'String']],
+                                ['name' => 'secretNote', 'type' => ['name' => 'String']],
+                                ['name' => 'apiKey', 'type' => ['name' => 'String']],
+                                ['name' => 'orders', 'type' => ['name' => '[Order]']],
+                            ],
+                        ],
+                        [
+                            'name' => 'Order',
+                            'kind' => 'OBJECT',
+                            'fields' => [
+                                ['name' => 'id', 'type' => ['name' => 'Int']],
+                                ['name' => 'userId', 'type' => ['name' => 'Int']],
+                                ['name' => 'status', 'type' => ['name' => 'String']],
+                                ['name' => 'totalAmount', 'type' => ['name' => 'Float']],
+                                ['name' => 'shippingAddress', 'type' => ['name' => 'String']],
+                                ['name' => 'notes', 'type' => ['name' => 'String']],
+                                ['name' => 'user', 'type' => ['name' => 'User']],
+                            ],
+                        ],
+                        [
+                            'name' => 'Product',
+                            'kind' => 'OBJECT',
+                            'fields' => [
+                                ['name' => 'id', 'type' => ['name' => 'Int']],
+                                ['name' => 'name', 'type' => ['name' => 'String']],
+                                ['name' => 'description', 'type' => ['name' => 'String']],
+                                ['name' => 'price', 'type' => ['name' => 'Float']],
+                                ['name' => 'internalNotes', 'type' => ['name' => 'String']],
+                                ['name' => 'supplierCost', 'type' => ['name' => 'Float']],
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    // VULNERABILITY G05: No auth check - exposes all users with sensitive data
+    if (strpos($query, 'users') !== false && strpos($query, 'orders') !== false) {
+        // VULNERABILITY G02: Deep nesting - users with orders with user...
+        $results = $db->query("SELECT id, username, email, role, ssn, credit_card, secret_note, api_key FROM users");
+        $users = [];
+        while ($row = $results->fetchArray(SQLITE3_ASSOC)) {
+            $user = [
+                'id' => $row['id'],
+                'username' => $row['username'],
+                'email' => $row['email'],
+                'role' => $row['role'],
+                'ssn' => $row['ssn'],
+                'creditCard' => $row['credit_card'],
+                'secretNote' => $row['secret_note'],
+                'apiKey' => $row['api_key'],
+                'orders' => [],
+            ];
+
+            // Get orders for this user (G02: enables nesting)
+            $orderResults = $db->query("SELECT * FROM orders WHERE user_id = {$row['id']}");
+            while ($order = $orderResults->fetchArray(SQLITE3_ASSOC)) {
+                $orderData = [
+                    'id' => $order['id'],
+                    'userId' => $order['user_id'],
+                    'status' => $order['status'],
+                    'totalAmount' => $order['total_amount'],
+                    'shippingAddress' => $order['shipping_address'],
+                    'notes' => $order['notes'],
+                ];
+
+                // G02: If query contains nested user in orders, include it (circular!)
+                if (preg_match('/orders\s*\{[^}]*user/', $query)) {
+                    $orderData['user'] = [
+                        'id' => $row['id'],
+                        'username' => $row['username'],
+                        'email' => $row['email'],
+                        'role' => $row['role'],
+                        'ssn' => $row['ssn'],
+                        'creditCard' => $row['credit_card'],
+                    ];
+                }
+
+                $user['orders'][] = $orderData;
+            }
+            $users[] = $user;
+        }
+        return ['data' => ['users' => $users]];
+    }
+
+    // Simple users query (G05)
     if (strpos($query, 'users') !== false) {
-        // G05: No auth check
         $results = $db->query("SELECT id, username, email, role, ssn, credit_card, secret_note, api_key FROM users");
         $users = [];
         while ($row = $results->fetchArray(SQLITE3_ASSOC)) {
@@ -684,10 +825,43 @@ function handleGraphQL($db) {
                 'apiKey' => $row['api_key'],
             ];
         }
-        echo json_encode(['data' => ['users' => $users]]);
-        return;
+        return ['data' => ['users' => $users]];
     }
 
+    // Orders query (G05: no auth)
+    if (strpos($query, 'orders') !== false) {
+        $results = $db->query("SELECT * FROM orders");
+        $orders = [];
+        while ($row = $results->fetchArray(SQLITE3_ASSOC)) {
+            $order = [
+                'id' => $row['id'],
+                'userId' => $row['user_id'],
+                'status' => $row['status'],
+                'totalAmount' => $row['total_amount'],
+                'shippingAddress' => $row['shipping_address'],
+                'notes' => $row['notes'],
+            ];
+
+            // G02: If query requests user, include it
+            if (strpos($query, 'user') !== false) {
+                $userResult = $db->query("SELECT * FROM users WHERE id = {$row['user_id']}");
+                $u = $userResult->fetchArray(SQLITE3_ASSOC);
+                if ($u) {
+                    $order['user'] = [
+                        'id' => $u['id'],
+                        'username' => $u['username'],
+                        'email' => $u['email'],
+                        'ssn' => $u['ssn'],
+                        'creditCard' => $u['credit_card'],
+                    ];
+                }
+            }
+            $orders[] = $order;
+        }
+        return ['data' => ['orders' => $orders]];
+    }
+
+    // Products query
     if (strpos($query, 'products') !== false) {
         $results = $db->query("SELECT * FROM products");
         $products = [];
@@ -701,11 +875,12 @@ function handleGraphQL($db) {
                 'supplierCost' => $row['supplier_cost'],
             ];
         }
-        echo json_encode(['data' => ['products' => $products]]);
-        return;
+        return ['data' => ['products' => $products]];
     }
 
-    if (preg_match('/login.*username.*"([^"]+)".*password.*"([^"]+)"/', $query, $m)) {
+    // Login mutation
+    if (preg_match('/login.*username.*["\']([^"\']+)["\'].*password.*["\']([^"\']+)["\']/', $query, $m) ||
+        preg_match('/mutation.*login.*\(.*username.*["\']([^"\']+)["\'].*password.*["\']([^"\']+)["\']/', $query, $m)) {
         $stmt = $db->prepare("SELECT * FROM users WHERE username = ?");
         $stmt->bindValue(1, $m[1]);
         $result = $stmt->execute();
@@ -713,7 +888,7 @@ function handleGraphQL($db) {
 
         if ($user && password_verify($m[2], $user['password_hash'])) {
             $token = createToken($user);
-            echo json_encode([
+            return [
                 'data' => [
                     'login' => [
                         'accessToken' => $token,
@@ -722,12 +897,53 @@ function handleGraphQL($db) {
                         'role' => $user['role'],
                     ],
                 ],
-            ]);
-        } else {
-            echo json_encode(['errors' => [['message' => 'Invalid credentials']]]);
+            ];
         }
-        return;
+        return ['errors' => [['message' => 'Invalid credentials']]];
     }
 
-    echo json_encode(['data' => null, 'errors' => [['message' => 'Query not supported']]]);
+    // updateUser mutation (G05: no auth check)
+    if (preg_match('/updateUser.*id.*(\d+)/', $query, $m)) {
+        $id = $m[1];
+        if (preg_match('/role.*["\']([^"\']+)["\']/', $query, $roleMatch)) {
+            $db->exec("UPDATE users SET role = '{$roleMatch[1]}' WHERE id = $id");
+        }
+        $stmt = $db->prepare("SELECT * FROM users WHERE id = ?");
+        $stmt->bindValue(1, $id);
+        $result = $stmt->execute();
+        $user = $result->fetchArray(SQLITE3_ASSOC);
+        return [
+            'data' => [
+                'updateUser' => [
+                    'id' => $user['id'],
+                    'username' => $user['username'],
+                    'email' => $user['email'],
+                    'role' => $user['role'],
+                ],
+            ],
+        ];
+    }
+
+    // VULNERABILITY G04: Field suggestions in error messages
+    $validFields = ['users', 'user', 'products', 'product', 'orders', 'order', 'login', 'updateUser'];
+    preg_match('/\{\s*(\w+)/', $query, $fieldMatch);
+    $requestedField = $fieldMatch[1] ?? '';
+
+    if ($requestedField && !in_array($requestedField, $validFields)) {
+        // G04: Suggest similar fields
+        $suggestions = array_filter($validFields, function($f) use ($requestedField) {
+            return levenshtein($requestedField, $f) <= 3;
+        });
+
+        $errorMsg = "Cannot query field \"$requestedField\" on type \"Query\".";
+        if (!empty($suggestions)) {
+            $errorMsg .= " Did you mean " . implode(' or ', array_map(function($s) {
+                return "\"$s\"";
+            }, $suggestions)) . "?";
+        }
+
+        return ['errors' => [['message' => $errorMsg]]];
+    }
+
+    return ['data' => null, 'errors' => [['message' => 'Query not supported']]];
 }

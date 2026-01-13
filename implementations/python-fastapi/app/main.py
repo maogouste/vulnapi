@@ -1,5 +1,7 @@
 """VulnAPI - Main application entry point."""
 
+import os
+import sys
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -11,9 +13,87 @@ from app.routers import auth, users, products, tools, admin, flags, docs
 from app.graphql import create_graphql_router
 
 
+def check_production_environment():
+    """
+    Check if running in a production-like environment and warn/block.
+
+    This application is INTENTIONALLY VULNERABLE and should NEVER
+    be deployed in production environments.
+    """
+    # Indicators that suggest production environment
+    production_indicators = {
+        "PRODUCTION": os.getenv("PRODUCTION"),
+        "PROD": os.getenv("PROD"),
+        "NODE_ENV=production": os.getenv("NODE_ENV") == "production",
+        "ENVIRONMENT=production": os.getenv("ENVIRONMENT") == "production",
+        "AWS_EXECUTION_ENV": os.getenv("AWS_EXECUTION_ENV"),
+        "AWS_LAMBDA_FUNCTION_NAME": os.getenv("AWS_LAMBDA_FUNCTION_NAME"),
+        "KUBERNETES_SERVICE_HOST": os.getenv("KUBERNETES_SERVICE_HOST"),
+        "ECS_CONTAINER_METADATA_URI": os.getenv("ECS_CONTAINER_METADATA_URI"),
+        "GOOGLE_CLOUD_PROJECT": os.getenv("GOOGLE_CLOUD_PROJECT"),
+        "AZURE_FUNCTIONS_ENVIRONMENT": os.getenv("AZURE_FUNCTIONS_ENVIRONMENT"),
+        "HEROKU_APP_NAME": os.getenv("HEROKU_APP_NAME"),
+        "RAILWAY_ENVIRONMENT": os.getenv("RAILWAY_ENVIRONMENT"),
+        "RENDER": os.getenv("RENDER"),
+        "VERCEL": os.getenv("VERCEL"),
+        "FLY_APP_NAME": os.getenv("FLY_APP_NAME"),
+    }
+
+    detected = {k: v for k, v in production_indicators.items() if v}
+
+    if detected:
+        warning_message = """
+================================================================================
+                    CRITICAL SECURITY WARNING
+================================================================================
+
+  VulnAPI has detected a PRODUCTION-LIKE environment!
+
+  Detected indicators:
+"""
+        for indicator, value in detected.items():
+            warning_message += f"    - {indicator}: {value}\n"
+
+        warning_message += """
+  THIS APPLICATION IS INTENTIONALLY VULNERABLE!
+  It contains security vulnerabilities by design for educational purposes.
+
+  DO NOT DEPLOY IN PRODUCTION - You WILL be compromised!
+
+  Vulnerabilities include:
+    - SQL Injection (V06)
+    - Command Injection (V07)
+    - Broken Authentication (V02)
+    - BOLA/IDOR (V01)
+    - And many more...
+
+================================================================================
+"""
+        print(warning_message, file=sys.stderr)
+
+        # Block startup unless explicitly overridden
+        if os.getenv("VULNAPI_FORCE_START") != "true":
+            print(
+                "  To override this safety check (NOT RECOMMENDED), set:\n"
+                "    VULNAPI_FORCE_START=true\n",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        else:
+            print(
+                "  WARNING: VULNAPI_FORCE_START=true detected.\n"
+                "  Proceeding despite production environment detection.\n"
+                "  YOU HAVE BEEN WARNED!\n",
+                file=sys.stderr,
+            )
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan: startup and shutdown events."""
+    # Check for production environment before starting
+    check_production_environment()
+
     # Startup
     await init_db()
     await seed_database()
