@@ -34,7 +34,7 @@ pytest_plugins = ('pytest_asyncio',)
 
 # Backend configurations
 BACKENDS = {
-    "python": {"url": "http://localhost:3001", "graphql_path": "/graphql/"},
+    "python": {"url": "http://localhost:8000", "graphql_path": "/graphql/"},
     "go": {"url": "http://localhost:3002", "graphql_path": "/graphql"},
     "php": {"url": "http://localhost:3003", "graphql_path": "/graphql"},
     "java": {"url": "http://localhost:3004", "graphql_path": "/graphql"},
@@ -95,10 +95,10 @@ async def http_client():
 
 @pytest.fixture
 def is_backend_running(backend):
-    """Check if the backend is running."""
+    """Check if the backend is running via /health endpoint."""
     name, config = backend
     try:
-        response = httpx.get(f"{config['url']}/api/users", timeout=2.0)
+        response = httpx.get(f"{config['url']}/health", timeout=2.0)
         return response.status_code == 200
     except (httpx.ConnectError, httpx.TimeoutException):
         return False
@@ -111,7 +111,7 @@ def pytest_collection_modifyitems(config, items):
         if hasattr(item, 'callspec') and 'backend' in item.callspec.params:
             backend_name, backend_config = item.callspec.params['backend']
             try:
-                response = httpx.get(f"{backend_config['url']}/api/users", timeout=2.0)
+                response = httpx.get(f"{backend_config['url']}/health", timeout=2.0)
                 if response.status_code != 200:
                     item.add_marker(pytest.mark.skip(
                         reason=f"{backend_name} backend not healthy at {backend_config['url']}"

@@ -14,23 +14,25 @@ This software contains **intentional** security vulnerabilities for educational 
 git clone https://github.com/maogouste/api-security-dojo.git
 cd api-security-dojo
 
-# Pick your backend
-cd implementations/python-fastapi && pip install -r requirements.txt && uvicorn app.main:app
-# or
-cd implementations/node-express && npm install && npm start
-# or
-cd implementations/go-gin && go run main.go
-# or
+# Install hatch (once)
+pip install hatch
+
+# Run Python backend (auto-creates venv)
+cd implementations/python-fastapi
+hatch run serve              # http://localhost:8000
+
+# Or other backends:
+cd implementations/node-express && npm install && npm start      # :3005
+cd implementations/go-gin && go run main.go                      # :3002
 cd implementations/php-laravel && php -S localhost:3003 index.php
-# or
-cd implementations/java-spring && mvn spring-boot:run
+cd implementations/java-spring && mvn spring-boot:run            # :3004
 ```
 
 ## Implementations
 
 | Backend | Language | Port | Framework |
 |---------|----------|------|-----------|
-| python-fastapi | Python | 3001 | FastAPI |
+| python-fastapi | Python | 8000 | FastAPI |
 | go-gin | Go | 3002 | Gin |
 | php-laravel | PHP | 3003 | Vanilla PHP |
 | java-spring | Java | 3004 | Spring Boot |
@@ -83,14 +85,49 @@ All implementations share:
 | `/api/v1/*` | Legacy API (V09) |
 | `/graphql` | GraphQL endpoint |
 
+## Development with Hatch
+
+[Hatch](https://hatch.pypa.io/) manages Python environments automatically.
+
+### Python Backend
+
+```bash
+cd implementations/python-fastapi
+
+hatch run serve          # Start server on :8000
+hatch run dev            # Start with auto-reload
+hatch run test           # Run unit tests
+hatch run test-cov       # Run tests with coverage
+hatch shell              # Activate the venv
+```
+
+### Cross-Implementation Tests
+
+```bash
+# From project root
+hatch run test           # All tests
+hatch run rest           # REST V01-V10 tests
+hatch run graphql        # GraphQL G01-G05 tests
+hatch run health         # Health endpoint tests
+
+# Test specific backend
+hatch run python         # Python only
+hatch run go             # Go only
+
+# Test specific vulnerability
+hatch run v01            # BOLA tests
+hatch run v06            # SQL Injection tests
+hatch run g01            # GraphQL Introspection
+```
+
 ## Modes
 
 ```bash
 # Challenge mode (default) - find vulnerabilities yourself
-DOJO_MODE=challenge uvicorn app.main:app
+DOJO_MODE=challenge hatch run serve
 
 # Documentation mode - full exploitation details
-DOJO_MODE=documentation uvicorn app.main:app
+DOJO_MODE=documentation hatch run serve
 ```
 
 ## Frontend
@@ -104,35 +141,13 @@ npm install && npm run dev
 
 Access at http://localhost:3000 - includes a backend selector for all 5 implementations.
 
-## Testing
-
-Cross-implementation tests verify GraphQL vulnerabilities (G01-G05) across all backends:
-
-```bash
-# Install test dependencies
-pip install pytest pytest-asyncio httpx
-
-# Run tests (start backends first)
-cd tests
-pytest cross-implementation/ -v
-
-# Test specific backend
-DOJO_BACKENDS=python pytest cross-implementation/ -v
-DOJO_BACKENDS=go,php pytest cross-implementation/ -v
-
-# Test specific vulnerability
-pytest cross-implementation/ -v -k "G01"
-```
-
-Tests auto-skip when backend is not running.
-
 ## Docker
 
 ```bash
 # Run all backends
 docker-compose up --build
 
-# Services will be available on ports 3001, 3002, 3003, 3004, 3005
+# Services will be available on ports 8000, 3002, 3003, 3004, 3005
 ```
 
 ## Test with API Security Checker
@@ -141,12 +156,9 @@ Use [api-security-checker](https://github.com/maogouste/api-security-checker) to
 
 ```bash
 # Install scanner
-pip install git+https://github.com/maogouste/api-security-checker.git
-
-# Scan API Security Dojo
-apisec scan http://localhost:8000 -u john -p password123
-apisec scan http://localhost:3002 -u john -p password123  # Go
-apisec scan http://localhost:3003 -u john -p password123  # PHP
+pip install hatch
+cd /path/to/api-security-checker
+hatch run apisec scan http://localhost:8000 -u john -p password123
 ```
 
 ## Default Credentials

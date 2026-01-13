@@ -1,0 +1,110 @@
+[project]
+name = "api-security-dojo"
+version = "0.2.0"
+description = "Intentionally vulnerable API for learning API security"
+readme = "../../README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "API Security Dojo Team"}
+]
+keywords = ["security", "api", "vulnerable", "training", "owasp"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Web Environment",
+    "Framework :: FastAPI",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Education",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Security",
+    "Topic :: Education",
+]
+dependencies = [
+    "fastapi>=0.109.0",
+    "uvicorn[standard]>=0.27.0",
+    "pydantic[email]>=2.0.0",
+    "pydantic-settings>=2.0.0",
+    "sqlalchemy>=2.0.0",
+    "aiosqlite>=0.19.0",
+    "python-jose[cryptography]>=3.3.0",
+    "passlib[bcrypt]>=1.7.0",
+    "python-multipart>=0.0.6",
+    "strawberry-graphql[fastapi]>=0.217.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "httpx>=0.26.0",
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-cov>=4.1.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+# =============================================================================
+# Hatch Environments
+# =============================================================================
+
+[tool.hatch.envs.default]
+dependencies = [
+    "httpx>=0.26.0",
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+]
+
+[tool.hatch.envs.default.scripts]
+serve = "uvicorn app.main:app --reload --host 0.0.0.0 --port {args:8000}"
+dev = "uvicorn app.main:app --reload --host 0.0.0.0 --port 8000"
+test = "pytest tests/ -v {args}"
+test-cov = "pytest tests/ -v --cov=app --cov-report=term-missing {args}"
+
+# Test environment for cross-implementation tests
+[tool.hatch.envs.test]
+dependencies = [
+    "httpx>=0.26.0",
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+]
+
+[tool.hatch.envs.test.scripts]
+all = "pytest ../../tests/cross-implementation/ -v {args}"
+rest = "pytest ../../tests/cross-implementation/test_rest_vulnerabilities.py -v {args}"
+graphql = "pytest ../../tests/cross-implementation/test_graphql_vulnerabilities.py -v {args}"
+health = "pytest ../../tests/cross-implementation/test_health.py -v {args}"
+
+# Documentation mode
+[tool.hatch.envs.docs]
+dependencies = [
+    "mkdocs>=1.5.0",
+    "mkdocs-material>=9.0.0",
+]
+
+[tool.hatch.envs.docs.scripts]
+build = "mkdocs build"
+serve = "mkdocs serve"
+
+# =============================================================================
+# Tool Configuration
+# =============================================================================
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "-v"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "C4"]
+ignore = ["E501"]  # Line too long - handled by formatter
