@@ -1,4 +1,5 @@
-vulnapi.db
+dojo.db
+*.db
 *.db-shm
 *.db-wal
 .env

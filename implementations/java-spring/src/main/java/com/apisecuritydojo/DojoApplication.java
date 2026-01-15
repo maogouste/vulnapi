@@ -1,4 +1,4 @@
-package com.vulnapi;
+package com.apisecuritydojo;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -7,7 +7,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * VulnAPI - Spring Boot Implementation
+ * API Security Dojo - Spring Boot Implementation
  *
  * WARNING: This API contains intentional security vulnerabilities.
  * Do NOT deploy in production.
@@ -19,11 +19,11 @@ import java.util.Map;
  * - config/ - Configuration classes
  */
 @SpringBootApplication
-public class VulnApiApplication {
+public class DojoApplication {
 
     public static void main(String[] args) {
         checkProductionEnvironment();
-        SpringApplication.run(VulnApiApplication.class, args);
+        SpringApplication.run(DojoApplication.class, args);
     }
 
     /**

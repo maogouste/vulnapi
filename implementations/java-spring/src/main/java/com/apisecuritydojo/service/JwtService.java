@@ -1,6 +1,6 @@
-package com.vulnapi.service;
+package com.apisecuritydojo.service;
 
-import com.vulnapi.config.SecurityConfig;
+import com.apisecuritydojo.config.SecurityConfig;
 import io.jsonwebtoken.Jwts;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.jdbc.core.JdbcTemplate;

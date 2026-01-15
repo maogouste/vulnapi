@@ -15,7 +15,7 @@ This software contains **intentional** vulnerabilities for educational purposes.
 
 # Or build the JAR first
 ./mvnw package
-java -jar target/vulnapi-spring-0.2.0.jar
+java -jar target/dojo-spring-0.2.0.jar
 ```
 
 The API will be available at `http://localhost:3004`

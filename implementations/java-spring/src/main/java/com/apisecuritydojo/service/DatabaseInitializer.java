@@ -1,4 +1,4 @@
-package com.vulnapi.service;
+package com.apisecuritydojo.service;
 
 import jakarta.annotation.PostConstruct;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -26,7 +26,7 @@ public class DatabaseInitializer {
 
             ╔═══════════════════════════════════════════════════════════╗
             ║                                                           ║
-            ║   VulnAPI - Java/Spring Boot Implementation               ║
+            ║   API Security Dojo - Java/Spring Boot Implementation     ║
             ║   ⚠️  WARNING: Intentionally Vulnerable API               ║
             ║                                                           ║
             ║   Server running on http://localhost:3004                 ║
@@ -94,11 +94,11 @@ public class DatabaseInitializer {
         System.out.println("[*] Seeding database...");
 
         Object[][] users = {
-            {"admin", "admin@vulnapi.local", "admin123", "admin", "123-45-6789", "4111-1111-1111-1111", "VULNAPI{bola_user_data_exposed}", "admin-api-key-12345"},
+            {"admin", "admin@dojo.local", "admin123", "admin", "123-45-6789", "4111-1111-1111-1111", "VULNAPI{bola_user_data_exposed}", "admin-api-key-12345"},
             {"john", "john@example.com", "password123", "user", "987-65-4321", "5500-0000-0000-0004", "John's private notes", null},
             {"jane", "jane@example.com", "jane2024", "user", "456-78-9012", "3400-0000-0000-009", "Jane's secret data", null},
             {"bob", "bob@example.com", "bob", "user", null, null, null, null},
-            {"service_account", "service@vulnapi.local", "svc_password_2024", "superadmin", null, null, "Service account", "VULNAPI{jwt_weak_secret_cracked}"},
+            {"service_account", "service@dojo.local", "svc_password_2024", "superadmin", null, null, "Service account", "VULNAPI{jwt_weak_secret_cracked}"},
         };
 
         for (Object[] u : users) {

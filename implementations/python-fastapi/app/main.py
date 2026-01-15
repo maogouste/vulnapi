@@ -3,6 +3,8 @@
 import os
 import sys
 from contextlib import asynccontextmanager
+from typing import Any, AsyncGenerator
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -13,7 +15,7 @@ from app.routers import auth, users, products, tools, admin, flags, docs
 from app.graphql import create_graphql_router
 
 
-def check_production_environment():
+def check_production_environment() -> None:
     """
     Check if running in a production-like environment and warn/block.
 
@@ -89,7 +91,7 @@ def check_production_environment():
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan: startup and shutdown events."""
     # Check for production environment before starting
     check_production_environment()
@@ -157,7 +159,7 @@ app.include_router(graphql_router, prefix="/graphql", tags=["GraphQL"])
 
 
 @app.get("/", tags=["Root"])
-async def root():
+async def root() -> dict[str, Any]:
     """Root endpoint with API information."""
     return {
         "name": "API Security Dojo",
@@ -183,6 +185,6 @@ async def root():
 
 
 @app.get("/health", tags=["Health"])
-async def health():
+async def health() -> dict[str, Any]:
     """Health check endpoint."""
     return {"status": "healthy", "debug": settings.debug}

@@ -1,4 +1,4 @@
-package com.vulnapi.controller;
+package com.apisecuritydojo.controller;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -12,17 +12,17 @@ import java.util.Map;
 @RestController
 public class RootController {
 
-    @Value("${vulnapi.mode:challenge}")
+    @Value("${dojo.mode:challenge}")
     private String mode;
 
     @GetMapping("/")
     public Map<String, Object> root() {
         return Map.of(
-            "name", "VulnAPI",
+            "name", "API Security Dojo",
             "version", "0.2.0",
             "mode", mode,
             "implementation", "Java/Spring Boot",
-            "message", "Welcome to VulnAPI - A deliberately vulnerable API"
+            "message", "Welcome to API Security Dojo - A deliberately vulnerable API"
         );
     }
 

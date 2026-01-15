@@ -1,4 +1,4 @@
-package com.vulnapi.controller;
+package com.apisecuritydojo.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -15,7 +15,7 @@ import java.util.*;
 @RequestMapping("/api/docs")
 public class DocsController {
 
-    @Value("${vulnapi.mode:challenge}")
+    @Value("${dojo.mode:challenge}")
     private String mode;
 
     private final ObjectMapper mapper = new ObjectMapper();
@@ -98,7 +98,7 @@ public class DocsController {
         if (!mode.equals("documentation")) {
             return ResponseEntity.status(403).body(Map.of(
                 "error", "Documentation mode is disabled",
-                "message", "Set VULNAPI_MODE=documentation to access vulnerability details",
+                "message", "Set DOJO_MODE=documentation to access vulnerability details",
                 "current_mode", mode
             ));
         }

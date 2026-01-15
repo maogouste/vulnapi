@@ -1,4 +1,4 @@
-package com.vulnapi.config;
+package com.apisecuritydojo.config;
 
 import io.jsonwebtoken.security.Keys;
 import org.springframework.context.annotation.Bean;

@@ -1,8 +1,9 @@
 """Tools router with Command Injection vulnerability."""
 
+from typing import Any
+
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from typing import Optional
 
 from app.models import User
 from app.vulnerabilities import (
@@ -28,7 +29,7 @@ class DnsRequest(BaseModel):
 async def ping_host(
     request: PingRequest,
     current_user: User = Depends(get_current_user_required),
-):
+) -> dict[str, Any]:
     """
     Ping a host.
 
@@ -51,7 +52,7 @@ async def ping_host(
 async def dns_lookup(
     request: DnsRequest,
     current_user: User = Depends(get_current_user_required),
-):
+) -> dict[str, Any]:
     """
     DNS lookup.
 
@@ -66,7 +67,7 @@ async def dns_lookup(
 
 
 @router.get("/tools/debug")
-async def debug_info():
+async def debug_info() -> dict[str, Any]:
     """
     Debug endpoint.
 
@@ -86,7 +87,7 @@ async def debug_info():
 
 
 @router.get("/tools/headers")
-async def show_headers():
+async def show_headers() -> dict[str, Any]:
     """
     Show security headers info.
 

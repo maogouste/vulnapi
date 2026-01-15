@@ -1,6 +1,6 @@
-package com.vulnapi.controller;
+package com.apisecuritydojo.controller;
 
-import com.vulnapi.service.JwtService;
+import com.apisecuritydojo.service.JwtService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;

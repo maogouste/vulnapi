@@ -8,7 +8,7 @@ from app.models import User, Product, Order, OrderItem, Flag
 from app.vulnerabilities import get_password_hash
 
 
-async def seed_database():
+async def seed_database() -> None:
     """Seed the database with initial data."""
     async with async_session_maker() as db:
         # Check if already seeded
@@ -212,7 +212,7 @@ async def seed_database():
         print("[*] Database seeded successfully!")
 
 
-async def create_sample_orders(db: AsyncSession):
+async def create_sample_orders(db: AsyncSession) -> None:
     """Create sample orders (called separately if needed)."""
     # Get users and products
     users_result = await db.execute(select(User).where(User.role == "user"))

@@ -4,12 +4,12 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.vulnapi</groupId>
-    <artifactId>vulnapi-spring</artifactId>
+    <groupId>com.apisecuritydojo</groupId>
+    <artifactId>dojo-spring</artifactId>
     <version>0.2.0</version>
     <packaging>jar</packaging>
 
-    <name>VulnAPI Spring</name>
+    <name>API Security Dojo Spring</name>
     <description>Intentionally Vulnerable API - Spring Boot Implementation</description>
 
     <parent>

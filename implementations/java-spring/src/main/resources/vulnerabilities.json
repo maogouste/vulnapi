@@ -293,7 +293,7 @@
           "Compare with /api/users which requires authentication"
         ],
         "example_request": "GET /api/v1/users\n# No Authorization header needed!",
-        "example_response": "[\n  {\"id\": 1, \"username\": \"admin\", \"email\": \"admin@vulnapi.local\"},\n  {\"id\": 2, \"username\": \"john\", \"email\": \"john@example.com\"},\n  ...\n]"
+        "example_response": "[\n  {\"id\": 1, \"username\": \"admin\", \"email\": \"admin@dojo.local\"},\n  {\"id\": 2, \"username\": \"john\", \"email\": \"john@example.com\"},\n  ...\n]"
       },
       "vulnerable_code": "# main.py - Legacy API still mounted\napp.include_router(users.router, prefix=\"/api\", tags=[\"Users\"])\napp.include_router(users.router_v1, prefix=\"/api/v1\", tags=[\"Users (Legacy)\"])\n\n# users.py - Legacy router without auth\nrouter_v1 = APIRouter()\n\n@router_v1.get(\"/users\")\nasync def get_users_legacy():\n    # No authentication required!\n    return await get_all_users()",
       "secure_code": "# Remove or properly secure legacy endpoints\n# Option 1: Remove entirely\n# app.include_router(users.router_v1, ...)  # Commented out\n\n# Option 2: Add deprecation and auth\nrouter_v1 = APIRouter(deprecated=True)\n\n@router_v1.get(\"/users\")\nasync def get_users_legacy(current_user: User = Depends(get_current_user)):\n    # Log usage of deprecated endpoint\n    logger.warning(f\"Deprecated v1 API used by {current_user.username}\")\n    return await get_all_users()",

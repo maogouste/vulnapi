@@ -2,7 +2,8 @@
 
 import subprocess
 import sqlite3
-from typing import List, Optional
+from typing import Any
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 
@@ -11,8 +12,8 @@ from app.models import Product
 
 async def search_products_vulnerable(
     db: AsyncSession,
-    search_term: str
-) -> List[dict]:
+    search_term: str,
+) -> list[dict[str, Any]]:
     """
     Search products with SQL injection vulnerability.
 
@@ -45,7 +46,7 @@ async def search_products_vulnerable(
     return products
 
 
-def ping_host_vulnerable(host: str) -> dict:
+def ping_host_vulnerable(host: str) -> dict[str, Any]:
     """
     Ping a host with command injection vulnerability.
 
@@ -83,7 +84,7 @@ def ping_host_vulnerable(host: str) -> dict:
         }
 
 
-def dns_lookup_vulnerable(domain: str) -> dict:
+def dns_lookup_vulnerable(domain: str) -> dict[str, Any]:
     """
     DNS lookup with command injection vulnerability.
 

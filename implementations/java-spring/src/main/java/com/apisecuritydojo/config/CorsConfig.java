@@ -1,4 +1,4 @@
-package com.vulnapi.config;
+package com.apisecuritydojo.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

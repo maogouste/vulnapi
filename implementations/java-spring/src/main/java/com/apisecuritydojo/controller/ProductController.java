@@ -1,4 +1,4 @@
-package com.vulnapi.controller;
+package com.apisecuritydojo.controller;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;

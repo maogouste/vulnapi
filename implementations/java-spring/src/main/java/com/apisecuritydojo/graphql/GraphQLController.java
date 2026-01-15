@@ -1,4 +1,4 @@
-package com.vulnapi.graphql;
+package com.apisecuritydojo.graphql;
 
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;

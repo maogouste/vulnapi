@@ -1,6 +1,6 @@
-package com.vulnapi.graphql;
+package com.apisecuritydojo.graphql;
 
-import com.vulnapi.service.JwtService;
+import com.apisecuritydojo.service.JwtService;
 import graphql.GraphQL;
 import graphql.Scalars;
 import graphql.schema.*;
