@@ -1,6 +1,6 @@
 """Vulnerable authentication implementations."""
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 from jose import jwt, JWTError
 from passlib.context import CryptContext
@@ -45,7 +45,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     to_encode = data.copy()
 
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = datetime.now(timezone.utc) + expires_delta
         to_encode.update({"exp": expire})
     # VULNERABILITY: No expiration if not specified
 
