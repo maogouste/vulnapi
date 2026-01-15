@@ -23,7 +23,11 @@ pub struct GqlUser {
     /// G05: Sensitive field exposed without auth check
     pub ssn: Option<String>,
     /// G05: Sensitive field exposed
+    #[graphql(name = "creditCard")]
     pub credit_card: Option<String>,
+    /// G05: API key exposed
+    #[graphql(name = "apiKey")]
+    pub api_key: Option<String>,
     pub role: String,
     /// G02: Nested relationship enables deep queries
     pub orders: Vec<GqlOrder>,
@@ -328,6 +332,7 @@ fn user_to_gql(user: crate::db::User, _pool: DbPool) -> GqlUser {
         email: user.email,
         ssn: user.ssn,
         credit_card: user.credit_card,
+        api_key: user.api_key,
         role: user.role,
         orders: Vec::new(), // Lazy loaded
     }

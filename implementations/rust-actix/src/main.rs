@@ -123,6 +123,7 @@ async fn main() -> std::io::Result<()> {
             .route("/api/tools/dns", web::get().to(api::dns_lookup))
             .route("/api/debug", web::get().to(api::debug_info))
             // Legacy API v1 (V09)
+            .route("/api/v1/users", web::get().to(api::v1_list_users))
             .route("/api/v1/users/{id}", web::get().to(api::v1_get_user))
             .route("/api/v1/users/search", web::get().to(api::v1_search_users))
             .route("/api/v1/admin/users", web::get().to(api::v1_admin_users))

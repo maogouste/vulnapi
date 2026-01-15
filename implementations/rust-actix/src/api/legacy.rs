@@ -5,6 +5,21 @@
 use actix_web::{web, HttpResponse};
 use crate::db::{DbPool, User, UserExposed, ErrorResponse};
 
+/// V09: Legacy v1 API - list all users with sensitive data
+pub async fn v1_list_users(
+    pool: web::Data<DbPool>,
+) -> HttpResponse {
+    let users: Vec<User> = sqlx::query_as("SELECT * FROM users")
+        .fetch_all(pool.get_ref())
+        .await
+        .unwrap_or_default();
+
+    let exposed: Vec<UserExposed> = users.into_iter().map(UserExposed::from).collect();
+
+    // V09: Return list directly with sensitive data exposed
+    HttpResponse::Ok().json(exposed)
+}
+
 /// V09: Legacy v1 API - less secure, deprecated but still works
 pub async fn v1_get_user(
     pool: web::Data<DbPool>,
